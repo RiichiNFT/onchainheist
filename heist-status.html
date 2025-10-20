@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Heist - Status</title>
+    <link rel="stylesheet" href="heist-status-styles.css">
+</head>
+<body>
+    <div class="background-overlay"></div>
+    
+    <!-- Waiting State (Heist Not Started) -->
+    <div class="status-container" id="waitingState">
+        <div class="status-hero">
+            <div class="status-icon">⏰</div>
+            <h1 class="status-title">HEIST NOT READY</h1>
+            <p class="status-subtitle">The vault is still under heavy security</p>
+            
+            <div class="countdown-display">
+                <div class="countdown-label">Next Heist Window Opens In:</div>
+                <div class="countdown-timer" id="countdownTimer">--:--</div>
+            </div>
+
+            <div class="waiting-visual">
+                <div class="security-bar"></div>
+                <div class="security-bar"></div>
+                <div class="security-bar"></div>
+            </div>
+
+            <p class="waiting-message">🔒 Security systems are too strong right now. Wait for the optimal window...</p>
+            
+            <button class="action-btn back-btn" id="backToLobbyBtn">
+                <span class="btn-icon">←</span>
+                <span class="btn-text">BACK TO LOBBY</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Ready State (Heist Started) -->
+    <div class="status-container hidden" id="readyState">
+        <div class="status-hero">
+            <div class="status-icon ready">🎯</div>
+            <h1 class="status-title ready">HEIST IS LIVE</h1>
+            <p class="status-subtitle ready">Security window is open! This is your chance!</p>
+            
+            <div class="ready-visual">
+                <div class="pulse-ring"></div>
+                <div class="pulse-ring delay-1"></div>
+                <div class="pulse-ring delay-2"></div>
+            </div>
+
+            <div class="alert-box">
+                <p>⚠️ WARNING: Limited time opportunity!</p>
+                <p>The vault is accessible but time is running out!</p>
+            </div>
+            
+            <button class="action-btn make-move-btn" id="makeMoveBtn">
+                <span class="btn-icon">💎</span>
+                <span class="btn-text">MAKE YOUR MOVE</span>
+            </button>
+        </div>
+    </div>
+
+    <script src="heist-status-script.js"></script>
+</body>
+</html>
+
