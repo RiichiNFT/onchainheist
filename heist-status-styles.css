@@ -331,6 +331,518 @@ body {
     }
 }
 
+/* Game State Styles */
+body:has(#gameState:not(.hidden)) {
+    overflow-y: auto;
+}
+
+.game-container {
+    width: 100%;
+    max-width: 1200px;
+    padding: 2rem;
+    animation: fadeIn 0.8s ease-out;
+}
+
+.game-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.game-title {
+    font-size: 3rem;
+    font-weight: 900;
+    letter-spacing: 0.2rem;
+    background: linear-gradient(45deg, #ffd700, #ffed4e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1rem;
+}
+
+.prize-pool-display {
+    background: rgba(255, 215, 0, 0.1);
+    border: 2px solid #ffd700;
+    border-radius: 10px;
+    padding: 1rem 2rem;
+    display: inline-block;
+}
+
+.pool-label {
+    font-size: 0.9rem;
+    color: #ffd700;
+    margin-bottom: 0.5rem;
+}
+
+.pool-amount {
+    font-size: 2rem;
+    font-weight: 900;
+    color: #ffd700;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+/* Game Stats */
+.game-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-box {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+}
+
+.stat-box:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-3px);
+}
+
+.stat-icon {
+    font-size: 3rem;
+}
+
+.stat-info {
+    flex: 1;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #aaa;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #00ff41;
+}
+
+/* Trap Cards Section */
+.trap-cards-section {
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    color: #ffd700;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.trap-cards-container {
+    background: rgba(255, 107, 107, 0.1);
+    border: 2px solid rgba(255, 107, 107, 0.3);
+    border-radius: 10px;
+    padding: 1.5rem;
+    min-height: 100px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.empty-state {
+    color: #888;
+    font-style: italic;
+    width: 100%;
+    text-align: center;
+    padding: 2rem;
+}
+
+.trap-card {
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid;
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+    min-width: 120px;
+    animation: slideIn 0.5s ease-out;
+}
+
+.trap-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin: 0 auto 0.5rem;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.trap-name {
+    font-size: 0.9rem;
+    color: #fff;
+    font-weight: 600;
+}
+
+/* Action Log */
+.action-log-section {
+    margin-bottom: 2rem;
+}
+
+.action-log {
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 1rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.log-entry {
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 5px;
+    border-left: 4px solid;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+}
+
+.log-entry.initial {
+    border-color: #888;
+    background: rgba(136, 136, 136, 0.1);
+    color: #aaa;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.log-entry.success {
+    border-color: #00ff41;
+    background: rgba(0, 255, 65, 0.1);
+    color: #00ff41;
+}
+
+.log-entry.warning {
+    border-color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.1);
+    color: #ff6b6b;
+}
+
+.log-entry.danger {
+    border-color: #ff0000;
+    background: rgba(255, 0, 0, 0.2);
+    color: #ff0000;
+    animation: flashRed 0.5s ease-in-out 3;
+}
+
+.log-entry.info {
+    border-color: #4ecdc4;
+    background: rgba(78, 205, 196, 0.1);
+    color: #4ecdc4;
+}
+
+/* Game Actions */
+.game-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.continue-btn {
+    border-color: #00ff41;
+    color: #00ff41;
+}
+
+.continue-btn::before {
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.3), transparent);
+}
+
+.continue-btn:hover {
+    background: rgba(0, 255, 65, 0.2);
+    box-shadow: 0 10px 30px rgba(0, 255, 65, 0.4);
+}
+
+.escape-btn {
+    border-color: #ffd700;
+    color: #ffd700;
+}
+
+.escape-btn::before {
+    background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.3), transparent);
+}
+
+.escape-btn:hover {
+    background: rgba(255, 215, 0, 0.2);
+    box-shadow: 0 10px 30px rgba(255, 215, 0, 0.4);
+}
+
+/* Game Over State */
+.game-over-container, .success-container {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    animation: fadeIn 0.8s ease-out;
+}
+
+.game-over-icon {
+    font-size: 8rem;
+    animation: shake 0.5s ease-in-out infinite;
+}
+
+.game-over-title {
+    font-size: 3.5rem;
+    font-weight: 900;
+    letter-spacing: 0.2rem;
+    color: #ff0000;
+    text-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+    animation: flashRed 1s ease-in-out infinite;
+}
+
+.game-over-subtitle {
+    font-size: 1.3rem;
+    color: #ff6b6b;
+    letter-spacing: 0.1rem;
+}
+
+.game-over-visual {
+    position: relative;
+    width: 200px;
+    height: 200px;
+}
+
+.alarm-flash {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100px;
+    height: 100px;
+    background: rgba(255, 0, 0, 0.3);
+    border-radius: 50%;
+    animation: alarmPulse 1s ease-out infinite;
+}
+
+.alarm-flash.delay-1 {
+    animation-delay: 0.3s;
+}
+
+.alarm-flash.delay-2 {
+    animation-delay: 0.6s;
+}
+
+.game-over-stats, .success-stats {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.game-over-stat, .success-stat {
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 1.5rem 2rem;
+    min-width: 200px;
+}
+
+.game-over-stat .stat-value.red {
+    color: #ff0000;
+}
+
+.success-stat .stat-value.green {
+    color: #00ff41;
+}
+
+.duplicate-traps {
+    margin: 1rem 0;
+}
+
+.alarm-trap-card {
+    background: rgba(255, 0, 0, 0.2);
+    border: 3px solid #ff0000;
+    border-radius: 15px;
+    padding: 1.5rem;
+    display: inline-block;
+    animation: shake 0.5s ease-in-out infinite;
+}
+
+.alarm-trap-card .trap-icon {
+    width: 80px;
+    height: 80px;
+    font-size: 3rem;
+    margin: 0 auto 1rem;
+}
+
+.alarm-trap-card .trap-name {
+    font-size: 1.2rem;
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
+.alarm-text {
+    font-size: 1rem;
+    color: #ff0000;
+    font-weight: 900;
+    letter-spacing: 0.2rem;
+}
+
+.game-over-message, .success-message {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 1.5rem 2rem;
+    max-width: 600px;
+}
+
+.game-over-message p {
+    color: #ff6b6b;
+    font-size: 1.1rem;
+    margin: 0.5rem 0;
+}
+
+.success-message p {
+    color: #00ff41;
+    font-size: 1.1rem;
+    margin: 0.5rem 0;
+}
+
+.retry-btn {
+    border-color: #4ecdc4;
+    color: #4ecdc4;
+}
+
+.retry-btn::before {
+    background: linear-gradient(90deg, transparent, rgba(78, 205, 196, 0.3), transparent);
+}
+
+.retry-btn:hover {
+    background: rgba(78, 205, 196, 0.2);
+    box-shadow: 0 10px 30px rgba(78, 205, 196, 0.4);
+}
+
+/* Success State */
+.success-icon {
+    font-size: 8rem;
+    animation: bounce 1s ease-in-out infinite;
+}
+
+.success-title {
+    font-size: 3.5rem;
+    font-weight: 900;
+    letter-spacing: 0.2rem;
+    background: linear-gradient(45deg, #00ff41, #00ffaa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 30px rgba(0, 255, 65, 0.5);
+}
+
+.success-subtitle {
+    font-size: 1.3rem;
+    color: #00ff41;
+    letter-spacing: 0.1rem;
+}
+
+.success-visual {
+    position: relative;
+    width: 200px;
+    height: 200px;
+}
+
+.money-rain {
+    position: absolute;
+    font-size: 3rem;
+    animation: fall 2s ease-in-out infinite;
+}
+
+.money-rain:nth-child(1) {
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.money-rain:nth-child(2) {
+    left: 30%;
+    animation-delay: 0.3s;
+}
+
+.money-rain:nth-child(3) {
+    left: 60%;
+    animation-delay: 0.6s;
+}
+
+.money-rain:nth-child(4) {
+    left: 80%;
+    animation-delay: 0.9s;
+}
+
+/* Additional Animations */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes flashRed {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: rotate(0deg);
+    }
+    25% {
+        transform: rotate(-5deg);
+    }
+    75% {
+        transform: rotate(5deg);
+    }
+}
+
+@keyframes alarmPulse {
+    0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(2.5);
+        opacity: 0;
+    }
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+@keyframes fall {
+    0% {
+        top: -20px;
+        opacity: 1;
+    }
+    100% {
+        top: 200px;
+        opacity: 0;
+    }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .status-title {
@@ -356,6 +868,35 @@ body {
     
     .alert-box p {
         font-size: 1rem;
+    }
+
+    .game-title {
+        font-size: 2rem;
+    }
+
+    .pool-amount {
+        font-size: 1.5rem;
+    }
+
+    .game-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .game-actions {
+        flex-direction: column;
+    }
+
+    .action-btn {
+        width: 100%;
+    }
+
+    .game-over-title, .success-title {
+        font-size: 2.5rem;
+    }
+
+    .game-over-stats, .success-stats {
+        flex-direction: column;
+        width: 100%;
     }
 }
 

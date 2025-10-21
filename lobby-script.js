@@ -10,13 +10,8 @@ const modalCloseBtn = document.getElementById('modalCloseBtn');
 const jackpotAmountEl = document.getElementById('jackpotAmount');
 const countdownEl = document.getElementById('countdown');
 
-// Generate random jackpot amount
-function generateJackpot() {
-    const min = 500000;
-    const max = 5000000;
-    const jackpot = Math.floor(Math.random() * (max - min + 1)) + min;
-    return jackpot;
-}
+// Total jackpot amount
+const TOTAL_JACKPOT = 10000000; // $10,000,000
 
 // Animate jackpot counter
 function animateJackpot(target) {
@@ -37,8 +32,7 @@ function animateJackpot(target) {
 
 // Initialize jackpot and heist timer on page load
 window.addEventListener('DOMContentLoaded', () => {
-    const jackpot = generateJackpot();
-    animateJackpot(jackpot);
+    animateJackpot(TOTAL_JACKPOT);
     
     // Set heist start time if not already set
     if (!localStorage.getItem('heistStartTime')) {
