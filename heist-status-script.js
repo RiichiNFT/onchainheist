@@ -25,9 +25,9 @@ const actionLogEl = document.getElementById('actionLog');
 const lootLostEl = document.getElementById('lootLost');
 const movesSurvivedEl = document.getElementById('movesSurvived');
 const duplicateTrapsEl = document.getElementById('duplicateTraps');
-const lootSecuredEl = document.getElementById('lootSecured');
-const yourShareEl = document.getElementById('yourShare');
-const escapeBonusEl = document.getElementById('escapeBonus');
+const yourTotalShareEl = document.getElementById('yourTotalShare');
+const escapeBonusLabelEl = document.getElementById('escapeBonusLabel');
+const thievesEscapedEl = document.getElementById('thievesEscaped');
 const relicRewardEl = document.getElementById('relicReward');
 
 // Game constants
@@ -152,10 +152,14 @@ function showSuccessState(escapeBonus, wonRelic, totalEscapees, raffleHeld) {
     
     const share = gameData.accumulatedLoot / gameData.playerCount;
     const escapeBonusShare = escapeBonus / totalEscapees;
+    const totalShare = share + escapeBonusShare;
     
-    lootSecuredEl.textContent = formatMoney(gameData.accumulatedLoot);
-    yourShareEl.textContent = formatMoney(share);
-    escapeBonusEl.textContent = formatMoney(escapeBonusShare);
+    // Display total share with escape bonus in parentheses
+    yourTotalShareEl.textContent = formatMoney(totalShare);
+    escapeBonusLabelEl.textContent = `(${formatMoney(escapeBonusShare)} Escape Bonus)`;
+    
+    // Display number of thieves who escaped with the player
+    thievesEscapedEl.textContent = totalEscapees;
     
     // Display relic reward based on raffle status
     if (wonRelic) {
@@ -177,9 +181,10 @@ function showSuccessState(escapeBonus, wonRelic, totalEscapees, raffleHeld) {
             </div>
         `;
     } else if (gameData.relics.length > 0 && !raffleHeld) {
+        const thresholdPercent = (gameData.relics.length * 6.5).toFixed(1);
         relicRewardEl.innerHTML = `
             <div class="relic-not-won">
-                <p class="relic-message">⚠️ Too many players escaped (≥5%) - no relic raffle held. Relics remain unclaimed in the vault.</p>
+                <p class="relic-message">⚠️ Too many players escaped (≥${thresholdPercent}% for ${gameData.relics.length} relic(s)) - no relic raffle held. Relics remain unclaimed in the vault.</p>
             </div>
         `;
     } else {
@@ -291,10 +296,33 @@ function simulatePlayerEscapes() {
     // Calculate number of players escaping (at least 1 if conditions are met)
     const escapingPlayers = Math.max(1, Math.floor(gameData.playerCount * escapeRate));
     
+    // Calculate what percentage of remaining players are escaping
+    const escapePercentage = escapingPlayers / gameData.playerCount;
+    
     // Remove escaped players from player count
+    const originalCount = gameData.playerCount;
     gameData.playerCount = Math.max(1, gameData.playerCount - escapingPlayers);
     
-    addLogEntry(`🏃 ${escapingPlayers} player(s) escaped with loot! ${gameData.playerCount} players remain.`, 'info');
+    const escapePercentDisplay = (escapePercentage * 100).toFixed(1);
+    addLogEntry(`🏃 ${escapingPlayers} player(s) escaped with loot (${escapePercentDisplay}%)! ${gameData.playerCount} players remain.`, 'info');
+    
+    // Check if there are relics and handle raffle
+    if (gameData.relics.length > 0) {
+        // Calculate threshold: 6.5% per relic
+        const raffleThreshold = gameData.relics.length * 0.065;
+        const thresholdPercent = (raffleThreshold * 100).toFixed(1);
+        const actualEscapePercent = (escapePercentage * 100).toFixed(1);
+        
+        if (escapePercentage < raffleThreshold) {
+            // Below threshold - hold raffle
+            const winnerIndex = Math.floor(Math.random() * escapingPlayers) + 1;
+            const wonRelic = gameData.relics[Math.floor(Math.random() * gameData.relics.length)];
+            addLogEntry(`✨ RELIC RAFFLE! Player #${winnerIndex} won ${wonRelic.name} ${wonRelic.icon} among ${escapingPlayers} escapees.`, 'relic');
+        } else {
+            // At or above threshold - no raffle
+            addLogEntry(`⚠️ Too many escapees (${actualEscapePercent}% ≥ ${thresholdPercent}% threshold for ${gameData.relics.length} relic(s)). No raffle held.`, 'warning');
+        }
+    }
 }
 
 // Make a move
@@ -426,12 +454,16 @@ function escapeWithLoot() {
     const escapeBonusShare = gameData.escapeBonusPool / totalEscapees;
     
     // Determine if player wins a relic
-    // Only hold raffle if LESS than 5% of remaining players are escaping
+    // Dynamic threshold: 6.5% per relic (1 relic = 6.5%, 2 relics = 13%, 3 relics = 19.5%, etc.)
     // (Prevents mass exodus from claiming all relics)
     let wonRelic = null;
     if (gameData.relics.length > 0) {
-        if (escapePercentage < 0.05) {
-            // Less than 5% escaping - hold exclusive raffle
+        const raffleThreshold = gameData.relics.length * 0.065;
+        const thresholdPercent = (raffleThreshold * 100).toFixed(1);
+        const actualEscapePercent = (escapePercentage * 100).toFixed(1);
+        
+        if (escapePercentage < raffleThreshold) {
+            // Below threshold - hold exclusive raffle
             const winChance = 1 / totalEscapees;
             if (Math.random() < winChance) {
                 wonRelic = gameData.relics[Math.floor(Math.random() * gameData.relics.length)];
@@ -440,16 +472,17 @@ function escapeWithLoot() {
                 addLogEntry(`😔 Lost the relic raffle among ${totalEscapees} escapees... Better luck next time!`, 'info');
             }
         } else {
-            // 5% or more escaping - too many people, no raffle
-            addLogEntry(`⚠️ Too many escapees for relic raffle (${totalEscapees} ≥ 5% of ${gameData.playerCount}). Relics remain in vault!`, 'warning');
+            // At or above threshold - too many people, no raffle
+            addLogEntry(`⚠️ Too many escapees for relic raffle (${actualEscapePercent}% ≥ ${thresholdPercent}% threshold for ${gameData.relics.length} relic(s)). Relics remain in vault!`, 'warning');
         }
     }
     
     const playerLootShare = gameData.accumulatedLoot / gameData.playerCount;
     addLogEntry(`🏃 ESCAPING WITH LOOT! ${totalEscapees} players escaped this round. Your share: ${formatMoney(playerLootShare)} + Escape Bonus: ${formatMoney(escapeBonusShare)}`, 'success');
     
+    const raffleThresholdForSuccess = gameData.relics.length * 0.065;
     setTimeout(() => {
-        showSuccessState(gameData.escapeBonusPool, wonRelic, totalEscapees, escapePercentage < 0.05);
+        showSuccessState(gameData.escapeBonusPool, wonRelic, totalEscapees, escapePercentage < raffleThresholdForSuccess);
     }, 1000);
 }
 

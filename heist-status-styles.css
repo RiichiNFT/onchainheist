@@ -755,6 +755,14 @@ body:has(#gameState:not(.hidden)) {
     min-width: 200px;
 }
 
+.stat-sublabel {
+    font-size: 0.9rem;
+    color: #00ff41;
+    margin-top: 0.5rem;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
 .game-over-stat .stat-value.red {
     color: #ff0000;
 }
