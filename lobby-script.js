@@ -11,7 +11,7 @@ const jackpotAmountEl = document.getElementById('jackpotAmount');
 const countdownEl = document.getElementById('countdown');
 
 // Total jackpot amount
-const TOTAL_JACKPOT = 10000000; // $10,000,000
+const TOTAL_JACKPOT = 5000000; // $5,000,000
 
 // Animate jackpot counter
 function animateJackpot(target) {
@@ -101,6 +101,8 @@ window.addEventListener('click', (event) => {
 
 // Enter Heist button functionality
 enterHeistBtn.addEventListener('click', () => {
+    // Set heist start time to now so it starts immediately
+    localStorage.setItem('heistStartTime', Date.now());
     // Redirect to heist status page
     window.location.href = 'heist-status.html';
 });

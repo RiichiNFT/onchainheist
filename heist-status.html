@@ -66,9 +66,15 @@
         <div class="game-container">
             <div class="game-header">
                 <h1 class="game-title">🏦 HEIST IN PROGRESS</h1>
-                <div class="prize-pool-display">
-                    <div class="pool-label">Total Prize Pool</div>
-                    <div class="pool-amount">$10,000,000</div>
+                <div class="prize-pools-container">
+                    <div class="prize-pool-display">
+                        <div class="pool-label">Total Prize Pool</div>
+                        <div class="pool-amount">$5,000,000</div>
+                    </div>
+                    <div class="prize-pool-display remaining">
+                        <div class="pool-label">Remaining Prize Pool</div>
+                        <div class="pool-amount" id="remainingPrizePool">$5,000,000</div>
+                    </div>
                 </div>
             </div>
 
@@ -76,8 +82,15 @@
                 <div class="stat-box">
                     <div class="stat-icon">💰</div>
                     <div class="stat-info">
-                        <div class="stat-label">Your Accumulated Loot</div>
-                        <div class="stat-value" id="accumulatedLoot">$0</div>
+                        <div class="stat-label">Your Share of Loot</div>
+                        <div class="stat-value" id="yourShareLoot">$0</div>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-icon">🎁</div>
+                    <div class="stat-info">
+                        <div class="stat-label">Escape Bonus Pool</div>
+                        <div class="stat-value" id="escapeBonusTotal">$0</div>
                     </div>
                 </div>
                 <div class="stat-box">
@@ -100,6 +113,13 @@
                 <h3 class="section-title">⚠️ Trap Cards Encountered</h3>
                 <div class="trap-cards-container" id="trapCardsContainer">
                     <div class="empty-state">No traps encountered yet...</div>
+                </div>
+            </div>
+
+            <div class="relics-section">
+                <h3 class="section-title">✨ Relics Discovered</h3>
+                <div class="relics-container" id="relicsContainer">
+                    <div class="empty-state">No relics discovered yet...</div>
                 </div>
             </div>
 
@@ -184,7 +204,13 @@
                     <div class="stat-label">Your Share</div>
                     <div class="stat-value green" id="yourShare">$0</div>
                 </div>
+                <div class="success-stat">
+                    <div class="stat-label">Escape Bonus</div>
+                    <div class="stat-value green" id="escapeBonus">$0</div>
+                </div>
             </div>
+
+            <div class="relic-reward" id="relicReward"></div>
 
             <div class="success-message">
                 <p>🏆 Congratulations! You've successfully completed the heist!</p>

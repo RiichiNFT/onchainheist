@@ -359,12 +359,34 @@ body:has(#gameState:not(.hidden)) {
     margin-bottom: 1rem;
 }
 
+.prize-pools-container {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
 .prize-pool-display {
     background: rgba(255, 215, 0, 0.1);
     border: 2px solid #ffd700;
     border-radius: 10px;
     padding: 1rem 2rem;
     display: inline-block;
+}
+
+.prize-pool-display.remaining {
+    background: rgba(0, 255, 65, 0.1);
+    border-color: #00ff41;
+}
+
+.prize-pool-display.remaining .pool-label {
+    color: #00ff41;
+}
+
+.prize-pool-display.remaining .pool-amount {
+    color: #00ff41;
+    text-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
 }
 
 .pool-label {
@@ -426,7 +448,7 @@ body:has(#gameState:not(.hidden)) {
 }
 
 /* Trap Cards Section */
-.trap-cards-section {
+.trap-cards-section, .relics-section {
     margin-bottom: 2rem;
 }
 
@@ -440,6 +462,18 @@ body:has(#gameState:not(.hidden)) {
 .trap-cards-container {
     background: rgba(255, 107, 107, 0.1);
     border: 2px solid rgba(255, 107, 107, 0.3);
+    border-radius: 10px;
+    padding: 1.5rem;
+    min-height: 100px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.relics-container {
+    background: rgba(255, 215, 0, 0.1);
+    border: 2px solid rgba(255, 215, 0, 0.3);
     border-radius: 10px;
     padding: 1.5rem;
     min-height: 100px;
@@ -483,6 +517,71 @@ body:has(#gameState:not(.hidden)) {
     font-size: 0.9rem;
     color: #fff;
     font-weight: 600;
+}
+
+/* Relic Cards */
+.relic-card {
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid #ffd700;
+    border-radius: 10px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 180px;
+    animation: slideIn 0.5s ease-out;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.relic-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+.relic-info {
+    flex: 1;
+}
+
+.relic-name {
+    font-size: 0.9rem;
+    color: #fff;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+}
+
+.relic-rarity {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.relic-rarity.legendary {
+    background: linear-gradient(135deg, #ffd700, #ff8c00);
+    color: #000;
+}
+
+.relic-rarity.rare {
+    background: linear-gradient(135deg, #4ecdc4, #00a8cc);
+    color: #000;
+}
+
+.relic-rarity.uncommon {
+    background: linear-gradient(135deg, #00ff41, #00cc33);
+    color: #000;
+}
+
+.relic-rarity.common {
+    background: linear-gradient(135deg, #aaa, #888);
+    color: #000;
 }
 
 /* Action Log */
@@ -540,6 +639,13 @@ body:has(#gameState:not(.hidden)) {
     border-color: #4ecdc4;
     background: rgba(78, 205, 196, 0.1);
     color: #4ecdc4;
+}
+
+.log-entry.relic {
+    border-color: #ffd700;
+    background: rgba(255, 215, 0, 0.1);
+    color: #ffd700;
+    animation: shimmer 2s ease-in-out infinite;
 }
 
 /* Game Actions */
@@ -710,6 +816,71 @@ body:has(#gameState:not(.hidden)) {
     margin: 0.5rem 0;
 }
 
+/* Relic Reward Display */
+.relic-reward {
+    margin: 1rem 0;
+}
+
+.relic-won {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 140, 0, 0.2));
+    border: 3px solid #ffd700;
+    border-radius: 15px;
+    padding: 2rem;
+    animation: pulseGold 2s ease-in-out infinite;
+}
+
+.relic-won h3 {
+    font-size: 2rem;
+    color: #ffd700;
+    margin-bottom: 1rem;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+}
+
+.won-relic-card {
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid #ffd700;
+    border-radius: 15px;
+    padding: 2rem;
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+
+.won-relic-card .relic-icon {
+    width: 100px;
+    height: 100px;
+    font-size: 4rem;
+    margin: 0 auto 1rem;
+}
+
+.won-relic-card .relic-name {
+    font-size: 1.5rem;
+    color: #ffd700;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.won-relic-card .relic-rarity {
+    font-size: 1rem;
+}
+
+.relic-message {
+    color: #ffd700;
+    font-size: 1.1rem;
+    margin-top: 1rem;
+}
+
+.relic-not-won {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 1rem;
+}
+
+.relic-not-won .relic-message {
+    color: #aaa;
+    font-size: 1rem;
+}
+
 .retry-btn {
     border-color: #4ecdc4;
     color: #4ecdc4;
@@ -843,6 +1014,15 @@ body:has(#gameState:not(.hidden)) {
     }
 }
 
+@keyframes pulseGold {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+    }
+    50% {
+        box-shadow: 0 0 30px 15px rgba(255, 215, 0, 0);
+    }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .status-title {
@@ -876,6 +1056,15 @@ body:has(#gameState:not(.hidden)) {
 
     .pool-amount {
         font-size: 1.5rem;
+    }
+
+    .prize-pools-container {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .prize-pool-display {
+        width: 100%;
     }
 
     .game-stats {
