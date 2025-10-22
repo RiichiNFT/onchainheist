@@ -860,21 +860,13 @@ function checkSoloWinner() {
         
         addLogEntry(`🏆 SOLO VICTORY! You're the last thief standing! You take EVERYTHING!`, 'relic', 'game');
         
-        // Player gets all remaining prize pool + ALL artifacts (revealed and unrevealed)
+        // Player gets all remaining prize pool + ALL AVAILABLE artifacts (not ones already taken)
         const soloWinnings = gameData.remainingPrizePool;
         
-        // Collect ALL artifacts: available, newly discovered, and even undiscovered ones
-        const allRelics = [...gameData.relics];
+        // Collect only AVAILABLE artifacts (not already claimed by other players)
+        const allRelics = [...gameData.relics]; // Available artifacts for raffle
         if (gameData.newlyDiscoveredRelic) {
-            allRelics.push(gameData.newlyDiscoveredRelic);
-        }
-        
-        // Add any artifacts that haven't been discovered yet
-        const discoveredNames = gameData.discoveredRelics.map(r => r.name);
-        for (const relicType of RELIC_TYPES) {
-            if (!discoveredNames.includes(relicType.name) && !allRelics.some(r => r.name === relicType.name)) {
-                allRelics.push(relicType);
-            }
+            allRelics.push(gameData.newlyDiscoveredRelic); // Newly discovered but not yet available
         }
         
         // Clear everything
