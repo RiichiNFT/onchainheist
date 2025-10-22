@@ -33,7 +33,7 @@ const relicRewardEl = document.getElementById('relicReward');
 
 // Game constants
 const PRIZE_POOL = 5000000; // $5,000,000
-const ESCAPE_BONUS_PERCENTAGE = 0.05; // 5% of loot goes to escape bonus
+const ESCAPE_BONUS_PERCENTAGE = 0.12; // 12% of loot goes to escape bonus
 const INITIAL_PLAYER_COUNT = 500; // Start with 500 players
 const MAX_RELICS = 3; // Only 3 relics available in the entire heist
 const TRAP_TYPES = [
@@ -631,7 +631,7 @@ function drawLoot() {
     const percentage = Math.random() * (maxPercent - minPercent) + minPercent;
     const totalLoot = Math.floor(gameData.remainingPrizePool * percentage); // Use REMAINING prize pool
     
-    // 5% goes to pending escape bonus (available next round)
+    // 12% goes to pending escape bonus (available next round)
     let escapeBonus = Math.floor(totalLoot * ESCAPE_BONUS_PERCENTAGE);
     const lootAmount = totalLoot - escapeBonus;
     
