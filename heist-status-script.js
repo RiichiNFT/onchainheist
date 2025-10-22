@@ -945,9 +945,9 @@ function escapeWithLoot() {
     // Calculate what percentage of remaining players are escaping
     const escapePercentage = totalEscapees / gameData.playerCount;
     
-    // Use LAST ROUND's per-player share (before current round draw)
-    // This ensures escaping players don't get loot revealed in the current round
-    const playerLootShare = gameData.lastRoundPlayerShare;
+    // Player gets CURRENT loot share (including this round) when manually escaping
+    // This is different from AI escapes which use lastRoundPlayerShare
+    const playerLootShare = gameData.playerLootShare;
     
     // Maintain per-player share: remove escaping players' loot from accumulated loot
     const escapingPlayersLoot = playerLootShare * totalEscapees;
