@@ -386,7 +386,9 @@ function simulatePlayerEscapes() {
         }
         
         // With low loot, bonus and relic incentives are minimal (only if significant)
-        if (gameData.escapeBonusPool > PRIZE_POOL * 0.1) { // Only if bonus > 10% of pool
+        if (gameData.escapeBonusPool > 100000) { // Big bonus pool incentive ($100k+)
+            escapeRate += 0.03; // Add 3% if big bonus pool exists
+        } else if (gameData.escapeBonusPool > PRIZE_POOL * 0.1) { // Only if bonus > 10% of pool
             escapeRate += 0.01; // Add 1% if significant bonus exists
         }
         
@@ -398,13 +400,23 @@ function simulatePlayerEscapes() {
         const trapRiskIncentive = gameData.trapCards.length * 0.03; // 3% per trap
         escapeRate += trapRiskIncentive;
         
-        // Increase escape rate based on escape bonus pool (up to +10%)
-        const bonusIncentive = Math.min((gameData.escapeBonusPool / PRIZE_POOL) * 20, 0.10);
-        escapeRate += bonusIncentive;
+        // MAJOR INCENTIVE: Big escape bonus pool ($100k+)
+        if (gameData.escapeBonusPool > 100000) {
+            escapeRate += 0.15; // Add 15% if bonus pool exceeds $100k!
+        } else {
+            // Normal escape bonus incentive (up to +10%)
+            const bonusIncentive = Math.min((gameData.escapeBonusPool / PRIZE_POOL) * 20, 0.10);
+            escapeRate += bonusIncentive;
+        }
         
-        // Increase escape rate if there are relics (2% per relic, up to +10%)
-        const relicIncentive = Math.min(gameData.relics.length * 0.02, 0.10);
+        // Increase escape rate if there are relics (4% per relic, up to +15%)
+        const relicIncentive = Math.min(gameData.relics.length * 0.04, 0.15);
         escapeRate += relicIncentive;
+    }
+    
+    // BONUS: Newly discovered relic creates excitement/fear - more escapes
+    if (gameData.newlyDiscoveredRelic) {
+        escapeRate += 0.05; // Add 5% when a relic was just discovered
     }
     
     // Calculate number of players escaping
@@ -766,9 +778,21 @@ function escapeWithLoot() {
     // Simulate this round's escapees (player + some others)
     // Calculate how many total players are escaping this round
     const baseEscapeRate = 0.08; // 8% base rate when player escapes
-    const bonusIncentive = Math.min((gameData.escapeBonusPool / PRIZE_POOL) * 15, 0.12);
-    const relicIncentive = Math.min(gameData.relics.length * 0.03, 0.12);
-    const totalEscapeRate = baseEscapeRate + bonusIncentive + relicIncentive;
+    
+    // MAJOR INCENTIVE: Big escape bonus pool ($100k+)
+    let bonusIncentive;
+    if (gameData.escapeBonusPool > 100000) {
+        bonusIncentive = 0.20; // 20% bonus if pool exceeds $100k!
+    } else {
+        bonusIncentive = Math.min((gameData.escapeBonusPool / PRIZE_POOL) * 15, 0.12);
+    }
+    
+    const relicIncentive = Math.min(gameData.relics.length * 0.04, 0.15);
+    
+    // BONUS: Newly discovered relic creates excitement/fear
+    const newRelicBonus = gameData.newlyDiscoveredRelic ? 0.05 : 0;
+    
+    const totalEscapeRate = baseEscapeRate + bonusIncentive + relicIncentive + newRelicBonus;
     
     const otherEscapingPlayers = Math.floor((gameData.playerCount - 1) * totalEscapeRate);
     const totalEscapees = otherEscapingPlayers + 1; // +1 for the player
