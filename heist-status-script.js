@@ -558,12 +558,12 @@ function makeMove() {
     
     gameData.movesCount++;
     
-    // After first move, change button text from "Start Heist" to "Hunt for Loot"
+    // After first move, change button text from "Start Heist" to "Double Down"
     if (gameData.movesCount === 1) {
         const continueBtnIcon = continueBtn.querySelector('.btn-icon');
         const continueBtnText = continueBtn.querySelector('.btn-text');
         continueBtnIcon.textContent = '💰';
-        continueBtnText.textContent = 'HUNT FOR LOOT';
+        continueBtnText.textContent = 'DOUBLE DOWN';
     }
     
     // ELIMINATION MECHANIC: Eliminate players based on security level
