@@ -555,18 +555,18 @@ function makeMove() {
     
     // Log odds change when all relics are taken
     if (allRelicsTaken && !gameData.oddsChangedLogged) {
-        addLogEntry(`🎊 ALL ${MAX_RELICS} RELICS TAKEN! Odds now 70% loot, 30% trap!`, 'relic', 'game');
+        addLogEntry(`🎊 ALL ${MAX_RELICS} RELICS TAKEN! Odds now 75% loot, 25% trap!`, 'relic', 'game');
         gameData.oddsChangedLogged = true;
     }
     
     // Adjust odds based on whether all relics are taken
-    // Before all relics taken: 57.5% loot, 30% trap, 12.5% relic
-    // After all relics taken: 70% loot, 30% trap
+    // Before all relics taken: 62.5% loot, 25% trap, 12.5% relic
+    // After all relics taken: 75% loot, 25% trap
     const random = Math.random();
     
     if (allRelicsTaken) {
         // All relics taken - only loot and traps
-        if (random < 0.70) {
+        if (random < 0.75) {
             // Loot outcome
             drawLoot();
         } else {
@@ -575,7 +575,7 @@ function makeMove() {
         }
     } else {
         // Still relics available or undiscovered
-        if (random < 0.575) {
+        if (random < 0.625) {
             // Loot outcome
             drawLoot();
         } else if (random < 0.875) {
@@ -610,29 +610,29 @@ function drawLoot() {
     // Determine percentage range based on loot draw count
     let minPercent, maxPercent;
     if (gameData.lootDrawCount <= 3) {
-        // Draws 1-3: 1%-10%
-        minPercent = 0.01;
-        maxPercent = 0.10;
-    } else if (gameData.lootDrawCount <= 6) {
-        // Draws 4-6: 5%-15%
+        // Draws 1-3: 5%-15%
         minPercent = 0.05;
         maxPercent = 0.15;
-    } else if (gameData.lootDrawCount <= 9) {
-        // Draws 7-9: 10%-20%
+    } else if (gameData.lootDrawCount <= 6) {
+        // Draws 4-6: 10%-20%
         minPercent = 0.10;
         maxPercent = 0.20;
-    } else if (gameData.lootDrawCount <= 12) {
-        // Draws 10-12: 15%-25%
+    } else if (gameData.lootDrawCount <= 9) {
+        // Draws 7-9: 15%-25%
         minPercent = 0.15;
         maxPercent = 0.25;
-    } else if (gameData.lootDrawCount <= 16) {
-        // Draws 13-16: 20%-30%
+    } else if (gameData.lootDrawCount <= 12) {
+        // Draws 10-12: 20%-30%
         minPercent = 0.20;
         maxPercent = 0.30;
-    } else {
-        // Draws 17+: 25%-35%
+    } else if (gameData.lootDrawCount <= 16) {
+        // Draws 13-16: 25%-35%
         minPercent = 0.25;
         maxPercent = 0.35;
+    } else {
+        // Draws 17+: 35%-40%
+        minPercent = 0.35;
+        maxPercent = 0.40;
     }
     
     const percentage = Math.random() * (maxPercent - minPercent) + minPercent;
