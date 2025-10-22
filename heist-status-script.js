@@ -210,6 +210,42 @@ function showPrizePoolDepletionState(wonRelic) {
     }
 }
 
+// Show solo winner state (last player standing)
+function showSoloWinnerState(totalWinnings, allRelics) {
+    hideAllStates();
+    successState.classList.remove('hidden');
+    
+    // Display total winnings (all remaining prize pool)
+    yourTotalShareEl.textContent = formatMoney(totalWinnings);
+    escapeBonusLabelEl.textContent = `(SOLO WINNER - TOOK EVERYTHING!)`;
+    
+    // Display that you were the last one standing
+    thievesEscapedEl.textContent = '1 (YOU)';
+    
+    // Display all relics won
+    if (allRelics.length > 0) {
+        relicRewardEl.innerHTML = `
+            <div class="relic-won">
+                <h3>🏆 JACKPOT! ALL RELICS CLAIMED! 🏆</h3>
+                ${allRelics.map(relic => `
+                    <div class="won-relic-card">
+                        <div class="relic-icon" style="background: ${relic.color};">${relic.icon}</div>
+                        <div class="relic-name">${relic.name}</div>
+                        <div class="relic-rarity ${relic.rarity.toLowerCase()}">${relic.rarity}</div>
+                    </div>
+                `).join('')}
+                <p class="relic-message">As the last thief standing, you claimed ALL remaining relics!</p>
+            </div>
+        `;
+    } else {
+        relicRewardEl.innerHTML = `
+            <div class="relic-not-won">
+                <p class="relic-message">All relics were already claimed, but you got all the remaining money!</p>
+            </div>
+        `;
+    }
+}
+
 // Show success state
 function showSuccessState(escapeBonus, wonRelic, totalEscapees, raffleHeld, playerLootShare, playerEscapeBonusShare) {
     hideAllStates();
@@ -549,6 +585,12 @@ function simulatePlayerEscapes() {
     }
     
     // Add single consolidated log entry
+    // Check if it's a teasing message (empty-handed escape)
+    if (perPlayerLoot === 0 && escapeBonusPerPlayer === 0) {
+        logMessage = `😅 ${escapingPlayers} player(s) chickened out with NOTHING (${escapePercentDisplay}%)! Better safe than sorry, right? ${gameData.playerCount} braver players remain.`;
+        logType = 'warning';
+    }
+    
     addLogEntry(logMessage, logType, 'player');
 }
 
@@ -667,6 +709,9 @@ function makeMove() {
     setTimeout(() => {
         simulatePlayerEscapes();
         updateGameDisplay();
+        
+        // Check if only 1 player remains - they win everything!
+        checkSoloWinner();
     }, 100);
 }
 
@@ -789,6 +834,30 @@ function checkAllPlayersEliminated() {
         
         setTimeout(() => {
             showGameOverState(null);
+        }, 1500);
+        return true;
+    }
+    return false;
+}
+
+// Check if only 1 player remains (solo winner!)
+function checkSoloWinner() {
+    if (gameData.playerCount === 1 && gameData.gameActive) {
+        gameData.gameActive = false;
+        
+        addLogEntry(`🏆 SOLO VICTORY! You're the last thief standing! You take EVERYTHING!`, 'relic', 'game');
+        
+        // Player gets all remaining prize pool + all remaining relics
+        const soloWinnings = gameData.remainingPrizePool;
+        const allRelics = [...gameData.relics, ...(gameData.newlyDiscoveredRelic ? [gameData.newlyDiscoveredRelic] : [])];
+        
+        // Clear everything
+        gameData.remainingPrizePool = 0;
+        gameData.relics = [];
+        gameData.newlyDiscoveredRelic = null;
+        
+        setTimeout(() => {
+            showSoloWinnerState(soloWinnings, allRelics);
         }, 1500);
         return true;
     }
@@ -974,7 +1043,16 @@ function escapeWithLoot() {
         }
     }
     
-    addLogEntry(`🏃 ESCAPING WITH LOOT! ${totalEscapees} players escaped this round. Your share: ${formatMoney(playerLootShare)} + Escape Bonus: ${formatMoney(escapeBonusShare)}`, 'success', 'player');
+    // Check if player escaped empty-handed (teasing message)
+    if (playerLootShare === 0 && escapeBonusShare === 0) {
+        if (wonRelic) {
+            addLogEntry(`🏃 YOU ESCAPED... with NO MONEY but at least you got a shiny ${wonRelic.name} ${wonRelic.icon}! Better than nothing... barely! 😅`, 'warning', 'player');
+        } else {
+            addLogEntry(`🏃 YOU ESCAPED... with absolutely NOTHING! ${totalEscapees} players fled empty-handed. Hey, at least you're safe... right? 😅`, 'warning', 'player');
+        }
+    } else {
+        addLogEntry(`🏃 ESCAPING WITH LOOT! ${totalEscapees} players escaped this round. Your share: ${formatMoney(playerLootShare)} + Escape Bonus: ${formatMoney(escapeBonusShare)}`, 'success', 'player');
+    }
     
     setTimeout(() => {
         showSuccessState(totalEscapeBonus, wonRelic, totalEscapees, raffleWasHeld, playerLootShare, escapeBonusShare);
