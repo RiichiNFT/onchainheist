@@ -47,12 +47,9 @@ const TRAP_TYPES = [
 ];
 
 const RELIC_TYPES = [
-    { name: 'Ancient Crown', icon: '👑', color: '#ffd700', rarity: 'Legendary' },
-    { name: 'Diamond Necklace', icon: '💎', color: '#4ecdc4', rarity: 'Rare' },
-    { name: 'Golden Chalice', icon: '🏆', color: '#ffed4e', rarity: 'Rare' },
-    { name: 'Ruby Ring', icon: '💍', color: '#ff6b6b', rarity: 'Uncommon' },
-    { name: 'Emerald Statue', icon: '🗿', color: '#00ff41', rarity: 'Uncommon' },
-    { name: 'Sapphire Gem', icon: '💠', color: '#4169e1', rarity: 'Common' }
+    { name: 'BAYC NFT', image: 'visuals/bayc.jpg', color: '#ffd700', rarity: 'Legendary' },
+    { name: 'CryptoPunk NFT', image: 'visuals/punk.jpg', color: '#4ecdc4', rarity: 'Legendary' },
+    { name: 'Ethernals NFT', image: 'visuals/ethernals.jpg', color: '#ffed4e', rarity: 'Legendary' }
 ];
 
 // Game state
@@ -186,13 +183,15 @@ function showPrizePoolDepletionState(wonRelic) {
     if (wonRelic) {
         relicRewardEl.innerHTML = `
             <div class="relic-won">
-                <h3>🎊 FINAL RELIC RAFFLE WON! 🎊</h3>
+                <h3>🎊 FINAL ARTIFACT RAFFLE WON! 🎊</h3>
                 <div class="won-relic-card">
-                    <div class="relic-icon" style="background: ${wonRelic.color};">${wonRelic.icon}</div>
+                    <div class="relic-icon" style="background: ${wonRelic.color};">
+                        <img src="${wonRelic.image}" alt="${wonRelic.name}" class="relic-image">
+                    </div>
                     <div class="relic-name">${wonRelic.name}</div>
                     <div class="relic-rarity ${wonRelic.rarity.toLowerCase()}">${wonRelic.rarity}</div>
                 </div>
-                <p class="relic-message">💰 Prize pool depleted! You won the final raffle for remaining relics!</p>
+                <p class="relic-message">💰 Prize pool depleted! You won the final raffle for remaining artifacts!</p>
             </div>
         `;
     } else if (gameData.relics.length > 0) {
@@ -229,7 +228,9 @@ function showSoloWinnerState(totalWinnings, allRelics) {
                 <h3>🏆 JACKPOT! ALL RELICS CLAIMED! 🏆</h3>
                 ${allRelics.map(relic => `
                     <div class="won-relic-card">
-                        <div class="relic-icon" style="background: ${relic.color};">${relic.icon}</div>
+                        <div class="relic-icon" style="background: ${relic.color};">
+                            <img src="${relic.image}" alt="${relic.name}" class="relic-image">
+                        </div>
                         <div class="relic-name">${relic.name}</div>
                         <div class="relic-rarity ${relic.rarity.toLowerCase()}">${relic.rarity}</div>
                     </div>
@@ -267,13 +268,15 @@ function showSuccessState(escapeBonus, wonRelic, totalEscapees, raffleHeld, play
     if (wonRelic) {
         relicRewardEl.innerHTML = `
             <div class="relic-won">
-                <h3>🎊 RELIC WON! 🎊</h3>
+                <h3>🎊 ARTIFACT WON! 🎊</h3>
                 <div class="won-relic-card">
-                    <div class="relic-icon" style="background: ${wonRelic.color};">${wonRelic.icon}</div>
+                    <div class="relic-icon" style="background: ${wonRelic.color};">
+                        <img src="${wonRelic.image}" alt="${wonRelic.name}" class="relic-image">
+                    </div>
                     <div class="relic-name">${wonRelic.name}</div>
                     <div class="relic-rarity ${wonRelic.rarity.toLowerCase()}">${wonRelic.rarity}</div>
                 </div>
-                <p class="relic-message">You won the raffle and claimed this precious relic!</p>
+                <p class="relic-message">You won the raffle and claimed this precious artifact!</p>
             </div>
         `;
     } else if (gameData.relics.length > 0 && raffleHeld) {
@@ -380,7 +383,9 @@ function updateGameDisplay() {
             
             return `
                 <div class="relic-card ${statusClass}">
-                    <div class="relic-icon" style="background: ${relic.color};">${relic.icon}</div>
+                    <div class="relic-icon" style="background: ${relic.color};">
+                        <img src="${relic.image}" alt="${relic.name}" class="relic-image">
+                    </div>
                     <div class="relic-info">
                         <div class="relic-name">${relic.name}</div>
                         <div class="relic-rarity ${relic.rarity.toLowerCase()}">${relic.rarity}</div>
@@ -571,9 +576,9 @@ function simulatePlayerEscapes() {
             // Build log message for raffle results
             if (raffleResults.length === 1) {
                 const result = raffleResults[0];
-                logMessage += ` ✨ RELIC RAFFLE: Player #${result.winner} won ${result.relic.name} ${result.relic.icon}.`;
+                logMessage += ` ✨ ARTIFACT RAFFLE: Player #${result.winner} won ${result.relic.name}.`;
             } else {
-                logMessage += ` ✨ RELIC RAFFLE: ${raffleResults.map(r => `Player #${r.winner} won ${r.relic.name} ${r.relic.icon}`).join(', ')}.`;
+                logMessage += ` ✨ ARTIFACT RAFFLE: ${raffleResults.map(r => `Player #${r.winner} won ${r.relic.name}`).join(', ')}.`;
             }
             logMessage += ` (${actualEscapePercent}% < ${thresholdPercent}% threshold). ${gameData.relics.length} relics remain.`;
             logType = 'relic';
@@ -898,7 +903,7 @@ function triggerPrizePoolDepletion() {
                     // Remove the won relic from the pool
                     gameData.relics.splice(relicIndex, 1);
                     
-                    addLogEntry(`🎉 YOU WON THE FINAL RAFFLE! Claimed ${wonRelic.name} ${wonRelic.icon}`, 'relic', 'player');
+                    addLogEntry(`🎉 YOU WON THE FINAL RAFFLE! Claimed ${wonRelic.name}`, 'relic', 'player');
                 }
             }
         }
@@ -1030,12 +1035,12 @@ function escapeWithLoot() {
             if (wonRelic) {
                 const otherWinners = raffleResults.filter(r => r.winner !== 'You');
                 if (otherWinners.length > 0) {
-                    addLogEntry(`🎉 WON RELIC RAFFLE! You claimed ${wonRelic.name} ${wonRelic.icon}! Others won: ${otherWinners.map(r => `${r.winner} (${r.relic.name} ${r.relic.icon})`).join(', ')}. (${actualEscapePercent}% < ${thresholdPercent}% threshold). ${gameData.relics.length} relics remain.`, 'relic', 'player');
+                    addLogEntry(`🎉 WON ARTIFACT RAFFLE! You claimed ${wonRelic.name}! Others won: ${otherWinners.map(r => `${r.winner} (${r.relic.name})`).join(', ')}. (${actualEscapePercent}% < ${thresholdPercent}% threshold). ${gameData.relics.length} artifacts remain.`, 'relic', 'player');
                 } else {
-                    addLogEntry(`🎉 WON RELIC RAFFLE! Claimed ${wonRelic.name} ${wonRelic.icon} (${actualEscapePercent}% escaped < ${thresholdPercent}% threshold). ${gameData.relics.length} relics remain.`, 'relic', 'player');
+                    addLogEntry(`🎉 WON ARTIFACT RAFFLE! Claimed ${wonRelic.name} (${actualEscapePercent}% escaped < ${thresholdPercent}% threshold). ${gameData.relics.length} artifacts remain.`, 'relic', 'player');
                 }
             } else {
-                addLogEntry(`😔 Lost the relic raffle among ${totalEscapees} escapees. Winners: ${raffleResults.map(r => `${r.winner} (${r.relic.name} ${r.relic.icon})`).join(', ')}. (${actualEscapePercent}% escaped)`, 'info', 'player');
+                addLogEntry(`😔 Lost the artifact raffle among ${totalEscapees} escapees. Winners: ${raffleResults.map(r => `${r.winner} (${r.relic.name})`).join(', ')}. (${actualEscapePercent}% escaped)`, 'info', 'player');
             }
         } else {
             // At or above threshold - too many people, no raffle
@@ -1046,7 +1051,7 @@ function escapeWithLoot() {
     // Check if player escaped empty-handed (teasing message)
     if (playerLootShare === 0 && escapeBonusShare === 0) {
         if (wonRelic) {
-            addLogEntry(`🏃 YOU ESCAPED... with NO MONEY but at least you got a shiny ${wonRelic.name} ${wonRelic.icon}! Better than nothing... barely! 😅`, 'warning', 'player');
+            addLogEntry(`🏃 YOU ESCAPED... with NO MONEY but at least you got a ${wonRelic.name}! Better than nothing... barely! 😅`, 'warning', 'player');
         } else {
             addLogEntry(`🏃 YOU ESCAPED... with absolutely NOTHING! ${totalEscapees} players fled empty-handed. Hey, at least you're safe... right? 😅`, 'warning', 'player');
         }
