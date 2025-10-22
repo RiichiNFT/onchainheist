@@ -554,7 +554,8 @@ function makeMove() {
     
     // ELIMINATION MECHANIC: Eliminate players based on unique trap types
     if (gameData.uniqueTrapTypes.size > 0) {
-        const eliminationRate = gameData.uniqueTrapTypes.size * 0.10; // 10% per trap type
+        // New elimination formula: 20% for 1 trap, +10% for each additional
+        const eliminationRate = 0.10 + (gameData.uniqueTrapTypes.size * 0.10); // 20%, 30%, 40%, 50%, 60%, 70%
         const playersToEliminate = Math.floor(gameData.playerCount * eliminationRate);
         
         if (playersToEliminate > 0) {
@@ -744,7 +745,7 @@ function drawTrap() {
     
     // New unique trap type - increase elimination rate
     gameData.uniqueTrapTypes.add(randomTrap.name);
-    const eliminationRate = gameData.uniqueTrapTypes.size * 10;
+    const eliminationRate = 10 + (gameData.uniqueTrapTypes.size * 10); // 20%, 30%, 40%, 50%, 60%, 70%
     addLogEntry(`🚨 NEW TRAP TYPE! ${randomTrap.name} ${randomTrap.icon} discovered! Elimination rate now ${eliminationRate}% per round (${gameData.uniqueTrapTypes.size} trap type(s) active).`, 'danger', 'game');
 }
 
