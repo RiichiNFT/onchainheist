@@ -544,8 +544,9 @@ function simulatePlayerEscapes() {
         const thresholdPercent = (raffleThreshold * 100).toFixed(1);
         const actualEscapePercent = (escapePercentage * 100).toFixed(1);
         
-        if (escapePercentage < raffleThreshold) {
-            // Below threshold - hold raffle for ALL available relics
+        // Raffle conditions: EITHER below threshold OR 5 or fewer players escaping
+        if (escapePercentage < raffleThreshold || escapingPlayers <= 5) {
+            // Hold raffle for ALL available relics
             const relicsToRaffle = [...gameData.relics]; // Copy array since we'll be modifying it
             const raffleResults = [];
             const winners = new Set(); // Track which players have won (max 1 per player)
@@ -580,11 +581,18 @@ function simulatePlayerEscapes() {
             } else {
                 logMessage += ` ✨ ARTIFACT RAFFLE: ${raffleResults.map(r => `Player #${r.winner} won ${r.relic.name}`).join(', ')}.`;
             }
-            logMessage += ` (${actualEscapePercent}% < ${thresholdPercent}% threshold). ${gameData.relics.length} relics remain.`;
+            
+            // Explain raffle reason
+            if (escapingPlayers <= 5) {
+                logMessage += ` (${escapingPlayers} escapees ≤ 5).`;
+            } else {
+                logMessage += ` (${actualEscapePercent}% < ${thresholdPercent}% threshold).`;
+            }
+            logMessage += ` ${gameData.relics.length} artifacts remain.`;
             logType = 'relic';
         } else {
-            // At or above threshold - no raffle
-            logMessage += ` ⚠️ No relic raffle (${actualEscapePercent}% ≥ ${thresholdPercent}% threshold for ${gameData.relics.length} relic(s)).`;
+            // Too many players - no raffle
+            logMessage += ` ⚠️ No artifact raffle (${escapingPlayers} escapees > 5 and ${actualEscapePercent}% ≥ ${thresholdPercent}% threshold).`;
             logType = 'warning';
         }
     }
@@ -852,9 +860,22 @@ function checkSoloWinner() {
         
         addLogEntry(`🏆 SOLO VICTORY! You're the last thief standing! You take EVERYTHING!`, 'relic', 'game');
         
-        // Player gets all remaining prize pool + all remaining relics
+        // Player gets all remaining prize pool + ALL artifacts (revealed and unrevealed)
         const soloWinnings = gameData.remainingPrizePool;
-        const allRelics = [...gameData.relics, ...(gameData.newlyDiscoveredRelic ? [gameData.newlyDiscoveredRelic] : [])];
+        
+        // Collect ALL artifacts: available, newly discovered, and even undiscovered ones
+        const allRelics = [...gameData.relics];
+        if (gameData.newlyDiscoveredRelic) {
+            allRelics.push(gameData.newlyDiscoveredRelic);
+        }
+        
+        // Add any artifacts that haven't been discovered yet
+        const discoveredNames = gameData.discoveredRelics.map(r => r.name);
+        for (const relicType of RELIC_TYPES) {
+            if (!discoveredNames.includes(relicType.name) && !allRelics.some(r => r.name === relicType.name)) {
+                allRelics.push(relicType);
+            }
+        }
         
         // Clear everything
         gameData.remainingPrizePool = 0;
@@ -988,9 +1009,10 @@ function escapeWithLoot() {
         const thresholdPercent = (raffleThreshold * 100).toFixed(1);
         const actualEscapePercent = (escapePercentage * 100).toFixed(1);
         
-        if (escapePercentage < raffleThreshold) {
+        // Raffle conditions: EITHER below threshold OR 5 or fewer players escaping
+        if (escapePercentage < raffleThreshold || totalEscapees <= 5) {
             raffleWasHeld = true;
-            // Below threshold - hold raffle for ALL available relics
+            // Hold raffle for ALL available relics
             const relicsToRaffle = [...gameData.relics]; // Copy array since we'll be modifying it
             const raffleResults = [];
             let playerHasWon = false; // Track if player has won (max 1 per player)
@@ -1034,17 +1056,25 @@ function escapeWithLoot() {
             // Build log message
             if (wonRelic) {
                 const otherWinners = raffleResults.filter(r => r.winner !== 'You');
+                // Determine raffle reason
+                const raffleReason = totalEscapees <= 5 
+                    ? `${totalEscapees} escapees ≤ 5` 
+                    : `${actualEscapePercent}% < ${thresholdPercent}% threshold`;
+                
                 if (otherWinners.length > 0) {
-                    addLogEntry(`🎉 WON ARTIFACT RAFFLE! You claimed ${wonRelic.name}! Others won: ${otherWinners.map(r => `${r.winner} (${r.relic.name})`).join(', ')}. (${actualEscapePercent}% < ${thresholdPercent}% threshold). ${gameData.relics.length} artifacts remain.`, 'relic', 'player');
+                    addLogEntry(`🎉 WON ARTIFACT RAFFLE! You claimed ${wonRelic.name}! Others won: ${otherWinners.map(r => `${r.winner} (${r.relic.name})`).join(', ')}. (${raffleReason}). ${gameData.relics.length} artifacts remain.`, 'relic', 'player');
                 } else {
-                    addLogEntry(`🎉 WON ARTIFACT RAFFLE! Claimed ${wonRelic.name} (${actualEscapePercent}% escaped < ${thresholdPercent}% threshold). ${gameData.relics.length} artifacts remain.`, 'relic', 'player');
+                    addLogEntry(`🎉 WON ARTIFACT RAFFLE! Claimed ${wonRelic.name} (${raffleReason}). ${gameData.relics.length} artifacts remain.`, 'relic', 'player');
                 }
             } else {
-                addLogEntry(`😔 Lost the artifact raffle among ${totalEscapees} escapees. Winners: ${raffleResults.map(r => `${r.winner} (${r.relic.name})`).join(', ')}. (${actualEscapePercent}% escaped)`, 'info', 'player');
+                const raffleReason = totalEscapees <= 5 
+                    ? `${totalEscapees} escapees ≤ 5` 
+                    : `${actualEscapePercent}% escaped`;
+                addLogEntry(`😔 Lost the artifact raffle among ${totalEscapees} escapees. Winners: ${raffleResults.map(r => `${r.winner} (${r.relic.name})`).join(', ')}. (${raffleReason})`, 'info', 'player');
             }
         } else {
-            // At or above threshold - too many people, no raffle
-            addLogEntry(`⚠️ Too many escapees for relic raffle (${actualEscapePercent}% ≥ ${thresholdPercent}% threshold for ${gameData.relics.length} relic(s)). Relics remain in vault!`, 'warning', 'player');
+            // Too many players - no raffle
+            addLogEntry(`⚠️ No artifact raffle (${totalEscapees} escapees > 5 and ${actualEscapePercent}% ≥ ${thresholdPercent}% threshold). Artifacts remain in vault!`, 'warning', 'player');
         }
     }
     
