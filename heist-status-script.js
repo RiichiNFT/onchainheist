@@ -729,20 +729,23 @@ function drawRelic() {
 // Draw trap
 function drawTrap() {
     const randomTrap = TRAP_TYPES[Math.floor(Math.random() * TRAP_TYPES.length)];
+    
+    // Check if this is a duplicate (same trap drawn before)
+    const isDuplicate = gameData.trapCards.some(trap => trap.name === randomTrap.name);
+    
     gameData.trapCards.push(randomTrap);
     
-    // Check if this is a new trap type
-    const wasNew = !gameData.uniqueTrapTypes.has(randomTrap.name);
-    gameData.uniqueTrapTypes.add(randomTrap.name);
-    
-    if (wasNew) {
-        // New trap type discovered - increase elimination rate
-        const eliminationRate = gameData.uniqueTrapTypes.size * 10;
-        addLogEntry(`🚨 NEW TRAP TYPE! ${randomTrap.name} ${randomTrap.icon} discovered! Elimination rate now ${eliminationRate}% per round (${gameData.uniqueTrapTypes.size} trap type(s) active).`, 'danger', 'game');
-    } else {
-        // Duplicate trap, but game continues
-        addLogEntry(`🚨 TRAP ENCOUNTERED! ${randomTrap.name} ${randomTrap.icon} discovered in the vault again!`, 'warning', 'game');
+    if (isDuplicate) {
+        // DUPLICATE TRAP = INSTANT GAME OVER FOR EVERYONE!
+        addLogEntry(`🚨 DUPLICATE TRAP! ${randomTrap.name} ${randomTrap.icon} encountered again!`, 'danger', 'game');
+        triggerAlarm(randomTrap);
+        return;
     }
+    
+    // New unique trap type - increase elimination rate
+    gameData.uniqueTrapTypes.add(randomTrap.name);
+    const eliminationRate = gameData.uniqueTrapTypes.size * 10;
+    addLogEntry(`🚨 NEW TRAP TYPE! ${randomTrap.name} ${randomTrap.icon} discovered! Elimination rate now ${eliminationRate}% per round (${gameData.uniqueTrapTypes.size} trap type(s) active).`, 'danger', 'game');
 }
 
 // Check if all players eliminated (new end condition)
@@ -757,6 +760,16 @@ function checkAllPlayersEliminated() {
         return true;
     }
     return false;
+}
+
+// Trigger alarm (game over) - DUPLICATE TRAP
+function triggerAlarm(duplicateTrap) {
+    gameData.gameActive = false;
+    addLogEntry(`🚨 ALARM TRIGGERED! Duplicate ${duplicateTrap.name} detected! EVERYONE ELIMINATED!`, 'danger', 'game');
+    
+    setTimeout(() => {
+        showGameOverState(duplicateTrap);
+    }, 1500);
 }
 
 // Prize pool depletion (game ends, raffle remaining relics)
