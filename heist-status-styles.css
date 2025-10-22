@@ -630,8 +630,24 @@ body:has(#gameState:not(.hidden)) {
 }
 
 /* Action Log */
-.action-log-section {
+.action-logs-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
     margin-bottom: 2rem;
+}
+
+.action-log-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.action-log-section.game-log .section-title {
+    color: #ffd700;
+}
+
+.action-log-section.player-log .section-title {
+    color: #00ff41;
 }
 
 .action-log {
@@ -641,6 +657,15 @@ body:has(#gameState:not(.hidden)) {
     padding: 1rem;
     max-height: 300px;
     overflow-y: auto;
+    flex: 1;
+}
+
+.action-log-section.game-log .action-log {
+    border-color: rgba(255, 215, 0, 0.3);
+}
+
+.action-log-section.player-log .action-log {
+    border-color: rgba(0, 255, 65, 0.3);
 }
 
 .log-entry {
@@ -1122,6 +1147,11 @@ body:has(#gameState:not(.hidden)) {
 
     .game-stats {
         grid-template-columns: 1fr;
+    }
+
+    .action-logs-container {
+        grid-template-columns: 1fr;
+        gap: 1rem;
     }
 
     .game-actions {

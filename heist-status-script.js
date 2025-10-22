@@ -21,7 +21,8 @@ const playerCountEl = document.getElementById('playerCount');
 const movesCountEl = document.getElementById('movesCount');
 const trapCardsContainerEl = document.getElementById('trapCardsContainer');
 const relicsContainerEl = document.getElementById('relicsContainer');
-const actionLogEl = document.getElementById('actionLog');
+const gameLogEl = document.getElementById('gameLog');
+const playerLogEl = document.getElementById('playerLog');
 const lootLostEl = document.getElementById('lootLost');
 const movesSurvivedEl = document.getElementById('movesSurvived');
 const duplicateTrapsEl = document.getElementById('duplicateTraps');
@@ -336,12 +337,15 @@ function updateGameDisplay() {
 }
 
 // Add log entry
-function addLogEntry(message, type = 'normal') {
+function addLogEntry(message, type = 'normal', category = 'game') {
     const logEntry = document.createElement('div');
     logEntry.className = `log-entry ${type}`;
     logEntry.textContent = message;
     
-    actionLogEl.insertBefore(logEntry, actionLogEl.firstChild);
+    // Route to the correct log based on category
+    const targetLog = category === 'player' ? playerLogEl : gameLogEl;
+    
+    targetLog.insertBefore(logEntry, targetLog.firstChild);
     
     // Animate entry
     setTimeout(() => {
@@ -349,9 +353,9 @@ function addLogEntry(message, type = 'normal') {
         logEntry.style.transform = 'translateY(0)';
     }, 10);
     
-    // Keep only last 10 entries
-    while (actionLogEl.children.length > 10) {
-        actionLogEl.removeChild(actionLogEl.lastChild);
+    // Keep only last 10 entries per log
+    while (targetLog.children.length > 10) {
+        targetLog.removeChild(targetLog.lastChild);
     }
 }
 
@@ -412,8 +416,9 @@ function simulatePlayerEscapes() {
     const calculatedEscapes = Math.floor(gameData.playerCount * escapeRate);
     const escapingPlayers = (escapeRate >= 0.005 && calculatedEscapes === 0) ? 1 : calculatedEscapes;
     
-    // If no one is escaping, just return
+    // If no one is escaping, log it and return
     if (escapingPlayers === 0) {
+        addLogEntry(`😌 No players escaped this round. All ${gameData.playerCount} players remain in the heist.`, 'info', 'player');
         return;
     }
     
@@ -443,13 +448,10 @@ function simulatePlayerEscapes() {
     const escapePercentDisplay = (escapePercentage * 100).toFixed(1);
     
     if (escapeBonusPerPlayer > 0) {
-        addLogEntry(`🏃 ${escapingPlayers} player(s) escaped with loot (${escapePercentDisplay}%)! Each got ${formatMoney(perPlayerLoot)} + ${formatMoney(escapeBonusPerPlayer)} bonus. ${gameData.playerCount} players remain.`, 'info');
+        addLogEntry(`🏃 ${escapingPlayers} player(s) escaped with loot (${escapePercentDisplay}%)! Each got ${formatMoney(perPlayerLoot)} + ${formatMoney(escapeBonusPerPlayer)} bonus. ${gameData.playerCount} players remain.`, 'info', 'player');
     } else {
-        addLogEntry(`🏃 ${escapingPlayers} player(s) escaped with loot (${escapePercentDisplay}%)! Each got ${formatMoney(perPlayerLoot)}. ${gameData.playerCount} players remain.`, 'info');
+        addLogEntry(`🏃 ${escapingPlayers} player(s) escaped with loot (${escapePercentDisplay}%)! Each got ${formatMoney(perPlayerLoot)}. ${gameData.playerCount} players remain.`, 'info', 'player');
     }
-    
-    // Update display after escape to show new pool state
-    updateGameDisplay();
     
     // Check if there are relics available for raffle
     // Safety check: Must have relics AND escaping players
@@ -472,12 +474,12 @@ function simulatePlayerEscapes() {
                     // Remove the won relic from the pool
                     gameData.relics.splice(relicIndex, 1);
                     
-                    addLogEntry(`✨ RELIC RAFFLE! Player #${winnerIndex} won ${wonRelic.name} ${wonRelic.icon} among ${escapingPlayers} escapees. (${gameData.relics.length} relics remain)`, 'relic');
+                    addLogEntry(`✨ RELIC RAFFLE! Player #${winnerIndex} won ${wonRelic.name} ${wonRelic.icon} (${actualEscapePercent}% escaped < ${thresholdPercent}% threshold). ${gameData.relics.length} relics remain.`, 'relic', 'player');
                 }
             }
         } else {
             // At or above threshold - no raffle
-            addLogEntry(`⚠️ Too many escapees (${actualEscapePercent}% ≥ ${thresholdPercent}% threshold for ${gameData.relics.length} relic(s)). No raffle held.`, 'warning');
+            addLogEntry(`⚠️ Too many escapees (${actualEscapePercent}% ≥ ${thresholdPercent}% threshold for ${gameData.relics.length} relic(s)). No raffle held.`, 'warning', 'player');
         }
     }
 }
@@ -491,7 +493,7 @@ function makeMove() {
     // Activate pending escape bonus from previous round (make it claimable)
     if (gameData.pendingEscapeBonus > 0) {
         gameData.escapeBonusPool += gameData.pendingEscapeBonus; // Add to existing pool (accumulates if unclaimed)
-        addLogEntry(`💰 ${formatMoney(gameData.pendingEscapeBonus)} escape bonus is now available for claiming! Total pool: ${formatMoney(gameData.escapeBonusPool)}`, 'success');
+        addLogEntry(`💰 ${formatMoney(gameData.pendingEscapeBonus)} escape bonus is now available for claiming! Total pool: ${formatMoney(gameData.escapeBonusPool)}`, 'success', 'game');
         gameData.pendingEscapeBonus = 0;
         updateGameDisplay(); // Update display immediately
     }
@@ -499,7 +501,7 @@ function makeMove() {
     // Activate newly discovered relic from previous round (make it available for raffle)
     if (gameData.newlyDiscoveredRelic) {
         gameData.relics.push(gameData.newlyDiscoveredRelic);
-        addLogEntry(`🎁 ${gameData.newlyDiscoveredRelic.name} ${gameData.newlyDiscoveredRelic.icon} is now available for raffle!`, 'relic');
+        addLogEntry(`🎁 ${gameData.newlyDiscoveredRelic.name} ${gameData.newlyDiscoveredRelic.icon} is now available for raffle!`, 'relic', 'game');
         gameData.newlyDiscoveredRelic = null;
         updateGameDisplay(); // Update display to show relic as available
     }
@@ -535,16 +537,20 @@ function makeMove() {
         }
     }
     
+    // Update display after game environment changes
+    updateGameDisplay();
+    
     // Check if prize pool is depleted
     if (gameData.remainingPrizePool <= 0) {
         triggerPrizePoolDepletion();
         return;
     }
     
-    // Simulate other players escaping after each round
-    simulatePlayerEscapes();
-    
-    updateGameDisplay();
+    // Small delay to ensure game environment logs appear first, then simulate player actions
+    setTimeout(() => {
+        simulatePlayerEscapes();
+        updateGameDisplay();
+    }, 100);
 }
 
 // Draw loot
@@ -583,10 +589,7 @@ function drawLoot() {
     const perPlayerAmount = Math.floor(lootAmount / gameData.playerCount);
     const percentageStr = (percentage * 100).toFixed(1);
     const remainingPercent = ((gameData.remainingPrizePool / PRIZE_POOL) * 100).toFixed(1);
-    addLogEntry(`💰 LOOT SECURED! Drew ${percentageStr}% of remaining prize pool (${formatMoney(perPlayerAmount)} per player + ${formatMoney(escapeBonus)} Escape Bonus). ${remainingPercent}% of total pool remains.`, 'success');
-    
-    // Update display immediately to show pending bonus
-    updateGameDisplay();
+    addLogEntry(`💰 LOOT SECURED! Drew ${percentageStr}% of remaining prize pool (${formatMoney(perPlayerAmount)} per player + ${formatMoney(escapeBonus)} Escape Bonus). ${remainingPercent}% of total pool remains.`, 'success', 'game');
 }
 
 // Draw relic
@@ -604,15 +607,12 @@ function drawRelic() {
     gameData.newlyDiscoveredRelic = randomRelic;
     gameData.discoveredRelics.push(randomRelic); // Add to discovered relics for display
     
-    addLogEntry(`✨ RELIC DISCOVERED! Found ${randomRelic.name} ${randomRelic.icon} (${randomRelic.rarity}) - ${gameData.discoveredRelics.length}/${MAX_RELICS} relics found. Available next turn!`, 'relic');
+    addLogEntry(`✨ RELIC DISCOVERED! Found ${randomRelic.name} ${randomRelic.icon} (${randomRelic.rarity}) - ${gameData.discoveredRelics.length}/${MAX_RELICS} relics found. Available next turn!`, 'relic', 'game');
     
     // Notify when all relics are found
     if (gameData.discoveredRelics.length >= MAX_RELICS) {
-        addLogEntry(`🎊 ALL ${MAX_RELICS} RELICS FOUND! No more relics available - odds now 70% loot, 30% trap!`, 'relic');
+        addLogEntry(`🎊 ALL ${MAX_RELICS} RELICS FOUND! No more relics available - odds now 70% loot, 30% trap!`, 'relic', 'game');
     }
-    
-    // Update display immediately to show the new relic as pending
-    updateGameDisplay();
 }
 
 // Draw trap
@@ -620,7 +620,7 @@ function drawTrap() {
     const randomTrap = TRAP_TYPES[Math.floor(Math.random() * TRAP_TYPES.length)];
     gameData.trapCards.push(randomTrap);
     
-    addLogEntry(`⚠️ TRAP ENCOUNTERED! ${randomTrap.name} ${randomTrap.icon}`, 'warning');
+    addLogEntry(`🚨 TRAP ENCOUNTERED! ${randomTrap.name} ${randomTrap.icon} discovered in the vault!`, 'warning', 'game');
     
     // Check for duplicates
     const trapCounts = {};
@@ -642,7 +642,7 @@ function drawTrap() {
 // Trigger alarm (game over)
 function triggerAlarm(duplicateTrap) {
     gameData.gameActive = false;
-    addLogEntry(`🚨 ALARM TRIGGERED! Two ${duplicateTrap.name} detected! YOU'VE BEEN CAPTURED!`, 'danger');
+    addLogEntry(`🚨 ALARM TRIGGERED! Two ${duplicateTrap.name} detected! YOU'VE BEEN CAPTURED!`, 'danger', 'game');
     
     setTimeout(() => {
         showGameOverState(duplicateTrap);
@@ -652,12 +652,12 @@ function triggerAlarm(duplicateTrap) {
 // Prize pool depletion (game ends, raffle remaining relics)
 function triggerPrizePoolDepletion() {
     gameData.gameActive = false;
-    addLogEntry(`💰 PRIZE POOL DEPLETED! All money has been taken from the vault!`, 'warning');
+    addLogEntry(`💰 PRIZE POOL DEPLETED! All money has been taken from the vault!`, 'warning', 'game');
     
     // Check if there are unclaimed relics
     const unclaimedRelics = gameData.relics.length;
     if (unclaimedRelics > 0 && gameData.playerCount > 0) {
-        addLogEntry(`✨ ${unclaimedRelics} relic(s) remain! All ${gameData.playerCount} remaining thieves will raffle for them!`, 'relic');
+        addLogEntry(`✨ ${unclaimedRelics} relic(s) remain! All ${gameData.playerCount} remaining thieves will raffle for them!`, 'relic', 'player');
         
         // Player has a chance to win one of the remaining relics
         const winChance = 1 / gameData.playerCount;
@@ -673,7 +673,7 @@ function triggerPrizePoolDepletion() {
                     // Remove the won relic from the pool
                     gameData.relics.splice(relicIndex, 1);
                     
-                    addLogEntry(`🎉 YOU WON THE FINAL RAFFLE! Claimed ${wonRelic.name} ${wonRelic.icon}`, 'relic');
+                    addLogEntry(`🎉 YOU WON THE FINAL RAFFLE! Claimed ${wonRelic.name} ${wonRelic.icon}`, 'relic', 'player');
                 }
             }
         }
@@ -682,7 +682,7 @@ function triggerPrizePoolDepletion() {
             showPrizePoolDepletionState(wonRelic);
         }, 1500);
     } else {
-        addLogEntry(`🏃 No relics remain. Time to escape!`, 'info');
+        addLogEntry(`🏃 No relics remain. Time to escape!`, 'info', 'player');
         setTimeout(() => {
             showPrizePoolDepletionState(null);
         }, 1500);
@@ -758,19 +758,19 @@ function escapeWithLoot() {
                         // Remove the won relic from the pool
                         gameData.relics.splice(relicIndex, 1);
                         
-                        addLogEntry(`🎉 WON RELIC RAFFLE! Claimed ${wonRelic.name} ${wonRelic.icon} (${totalEscapees} escapees participated, ${gameData.relics.length} relics remain)`, 'relic');
+                        addLogEntry(`🎉 WON RELIC RAFFLE! Claimed ${wonRelic.name} ${wonRelic.icon} (${actualEscapePercent}% escaped < ${thresholdPercent}% threshold). ${gameData.relics.length} relics remain.`, 'relic', 'player');
                     }
                 }
             } else {
-                addLogEntry(`😔 Lost the relic raffle among ${totalEscapees} escapees... Better luck next time!`, 'info');
+                addLogEntry(`😔 Lost the relic raffle among ${totalEscapees} escapees (${actualEscapePercent}% escaped)... Better luck next time!`, 'info', 'player');
             }
         } else {
             // At or above threshold - too many people, no raffle
-            addLogEntry(`⚠️ Too many escapees for relic raffle (${actualEscapePercent}% ≥ ${thresholdPercent}% threshold for ${gameData.relics.length} relic(s)). Relics remain in vault!`, 'warning');
+            addLogEntry(`⚠️ Too many escapees for relic raffle (${actualEscapePercent}% ≥ ${thresholdPercent}% threshold for ${gameData.relics.length} relic(s)). Relics remain in vault!`, 'warning', 'player');
         }
     }
     
-    addLogEntry(`🏃 ESCAPING WITH LOOT! ${totalEscapees} players escaped this round. Your share: ${formatMoney(playerLootShare)} + Escape Bonus: ${formatMoney(escapeBonusShare)}`, 'success');
+    addLogEntry(`🏃 ESCAPING WITH LOOT! ${totalEscapees} players escaped this round. Your share: ${formatMoney(playerLootShare)} + Escape Bonus: ${formatMoney(escapeBonusShare)}`, 'success', 'player');
     
     setTimeout(() => {
         showSuccessState(totalEscapeBonus, wonRelic, totalEscapees, raffleWasHeld);
@@ -794,7 +794,8 @@ function resetGame() {
         gameActive: false
     };
     
-    actionLogEl.innerHTML = '<div class="log-entry initial">Ready to start the heist...</div>';
+    gameLogEl.innerHTML = '<div class="log-entry initial">Waiting for game to start...</div>';
+    playerLogEl.innerHTML = '<div class="log-entry initial">No player actions yet...</div>';
 }
 
 // Start game
@@ -802,7 +803,7 @@ function startGame() {
     resetGame();
     gameData.gameActive = true;
     showGameState();
-    addLogEntry(`🎯 HEIST STARTED! ${gameData.playerCount} thieves entered the vault.`, 'info');
+    addLogEntry(`🎯 HEIST STARTED! ${gameData.playerCount} thieves entered the vault.`, 'info', 'game');
 }
 
 // Back to lobby button
