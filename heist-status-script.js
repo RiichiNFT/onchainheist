@@ -19,6 +19,7 @@ const escapeBonusTotalEl = document.getElementById('escapeBonusTotal');
 const remainingPrizePoolEl = document.getElementById('remainingPrizePool');
 const playerCountEl = document.getElementById('playerCount');
 const movesCountEl = document.getElementById('movesCount');
+const playersToEliminateEl = document.getElementById('playersToEliminate');
 const trapCardsContainerEl = document.getElementById('trapCardsContainer');
 const relicsContainerEl = document.getElementById('relicsContainer');
 const gameLogEl = document.getElementById('gameLog');
@@ -68,7 +69,7 @@ let gameData = {
     movesCount: 0,
     lootDrawCount: 0, // Track how many times loot has been drawn
     trapCards: [],
-    uniqueTrapTypes: new Set(), // Track unique trap types for elimination rate
+    uniqueTrapTypes: new Set(), // Track unique security threats for security level
     relics: [], // Available relics (for raffle)
     discoveredRelics: [], // All discovered relics (for display)
     newlyDiscoveredRelic: null, // Relic discovered this turn (not yet available for raffle)
@@ -292,6 +293,18 @@ function updateGameDisplay() {
     remainingPrizePoolEl.textContent = formatMoney(gameData.remainingPrizePool);
     playerCountEl.textContent = gameData.playerCount;
     movesCountEl.textContent = gameData.movesCount;
+    
+    // Calculate and display players to eliminate next round based on security level
+    const securityLevel = gameData.uniqueTrapTypes.size;
+    let eliminationRate = 0;
+    if (securityLevel === 1) eliminationRate = 0.15;
+    else if (securityLevel === 2) eliminationRate = 0.30;
+    else if (securityLevel === 3) eliminationRate = 0.45;
+    else if (securityLevel === 4) eliminationRate = 0.60;
+    else if (securityLevel >= 5) eliminationRate = 0.75;
+    
+    const playersToEliminate = Math.floor(gameData.playerCount * eliminationRate);
+    playersToEliminateEl.textContent = playersToEliminate;
     
     // Update trap cards display
     if (gameData.trapCards.length === 0) {
@@ -553,10 +566,19 @@ function makeMove() {
         continueBtnText.textContent = 'HUNT FOR LOOT';
     }
     
-    // ELIMINATION MECHANIC: Eliminate players based on unique trap types
+    // ELIMINATION MECHANIC: Eliminate players based on security level
     if (gameData.uniqueTrapTypes.size > 0) {
-        // New elimination formula: 20% for 1 trap, +10% for each additional
-        const eliminationRate = 0.10 + (gameData.uniqueTrapTypes.size * 0.10); // 20%, 30%, 40%, 50%, 60%, 70%
+        // Security Level based elimination rates
+        const securityLevel = gameData.uniqueTrapTypes.size;
+        let eliminationRate = 0;
+        
+        // Security Level elimination rates: 15%, 30%, 45%, 60%, 75% (caps at 75%)
+        if (securityLevel === 1) eliminationRate = 0.15;
+        else if (securityLevel === 2) eliminationRate = 0.30;
+        else if (securityLevel === 3) eliminationRate = 0.45;
+        else if (securityLevel === 4) eliminationRate = 0.60;
+        else if (securityLevel >= 5) eliminationRate = 0.75;
+        
         const playersToEliminate = Math.floor(gameData.playerCount * eliminationRate);
         
         if (playersToEliminate > 0) {
@@ -564,7 +586,7 @@ function makeMove() {
             gameData.eliminatedPlayers += playersToEliminate;
             
             const eliminationPercent = (eliminationRate * 100).toFixed(0);
-            addLogEntry(`⚠️ TRAP ELIMINATION! ${playersToEliminate} players caught (${eliminationPercent}% elimination rate with ${gameData.uniqueTrapTypes.size} trap type(s)). ${gameData.playerCount} players remain.`, 'danger', 'player');
+            addLogEntry(`⚠️ SECURITY ELIMINATION! ${playersToEliminate} players caught (${eliminationPercent}% elimination rate at Security Level ${securityLevel}). ${gameData.playerCount} players remain.`, 'danger', 'player');
             
             // Check if all players eliminated
             if (checkAllPlayersEliminated()) {
@@ -744,10 +766,19 @@ function drawTrap() {
         return;
     }
     
-    // New unique trap type - increase elimination rate
+    // New unique security threat - increase security level
     gameData.uniqueTrapTypes.add(randomTrap.name);
-    const eliminationRate = 10 + (gameData.uniqueTrapTypes.size * 10); // 20%, 30%, 40%, 50%, 60%, 70%
-    addLogEntry(`🚨 NEW TRAP TYPE! ${randomTrap.name} ${randomTrap.icon} discovered! Elimination rate now ${eliminationRate}% per round (${gameData.uniqueTrapTypes.size} trap type(s) active).`, 'danger', 'game');
+    const securityLevel = gameData.uniqueTrapTypes.size;
+    
+    // Calculate elimination rate based on security level
+    let eliminationRate = 0;
+    if (securityLevel === 1) eliminationRate = 15;
+    else if (securityLevel === 2) eliminationRate = 30;
+    else if (securityLevel === 3) eliminationRate = 45;
+    else if (securityLevel === 4) eliminationRate = 60;
+    else if (securityLevel >= 5) eliminationRate = 75;
+    
+    addLogEntry(`🚨 NEW SECURITY THREAT! ${randomTrap.name} ${randomTrap.icon} discovered! Security Level now ${securityLevel}. Elimination rate: ${eliminationRate}% per round.`, 'danger', 'game');
 }
 
 // Check if all players eliminated (new end condition)
