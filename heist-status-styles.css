@@ -584,6 +584,51 @@ body:has(#gameState:not(.hidden)) {
     color: #000;
 }
 
+.relic-status {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 0.3rem;
+    opacity: 0.9;
+}
+
+.relic-card.relic-claimed {
+    opacity: 0.5;
+    border-color: #666;
+    box-shadow: 0 0 10px rgba(102, 102, 102, 0.3);
+}
+
+.relic-card.relic-claimed .relic-icon {
+    box-shadow: 0 0 10px rgba(102, 102, 102, 0.3);
+}
+
+.relic-card.relic-claimed .relic-status {
+    color: #888;
+}
+
+.relic-card.relic-new {
+    border-color: #ffed4e;
+    box-shadow: 0 0 30px rgba(255, 237, 78, 0.6);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.relic-card.relic-new .relic-icon {
+    box-shadow: 0 0 30px rgba(255, 237, 78, 0.8);
+}
+
+.relic-card.relic-new .relic-status {
+    color: #ffed4e;
+    font-weight: 700;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(255, 237, 78, 0.6);
+    }
+    50% {
+        box-shadow: 0 0 40px rgba(255, 237, 78, 0.9);
+    }
+}
+
 /* Action Log */
 .action-log-section {
     margin-bottom: 2rem;

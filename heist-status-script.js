@@ -34,6 +34,7 @@ const relicRewardEl = document.getElementById('relicReward');
 const PRIZE_POOL = 5000000; // $5,000,000
 const ESCAPE_BONUS_PERCENTAGE = 0.05; // 5% of loot goes to escape bonus
 const INITIAL_PLAYER_COUNT = 500; // Start with 500 players
+const MAX_RELICS = 3; // Only 3 relics available in the entire heist
 const TRAP_TYPES = [
     { name: 'Security Guard', icon: '👮', color: '#ff6b6b' },
     { name: 'Laser Fields', icon: '🔴', color: '#ff0000' },
@@ -55,13 +56,16 @@ const RELIC_TYPES = [
 // Game state
 let gameData = {
     accumulatedLoot: 0,
-    escapeBonusPool: 0,
+    escapeBonusPool: 0, // Available for claiming NOW
+    pendingEscapeBonus: 0, // Just drawn, available NEXT round
     remainingPrizePool: PRIZE_POOL, // Track remaining prize pool
     playerCount: INITIAL_PLAYER_COUNT, // Start with 500 players
     movesCount: 0,
     lootDrawCount: 0, // Track how many times loot has been drawn
     trapCards: [],
-    relics: [],
+    relics: [], // Available relics (for raffle)
+    discoveredRelics: [], // All discovered relics (for display)
+    newlyDiscoveredRelic: null, // Relic discovered this turn (not yet available for raffle)
     gameActive: false
 };
 
@@ -145,6 +149,50 @@ function showGameOverState(duplicateTrap) {
     `;
 }
 
+// Show prize pool depletion state
+function showPrizePoolDepletionState(wonRelic) {
+    hideAllStates();
+    successState.classList.remove('hidden');
+    
+    const share = gameData.accumulatedLoot / gameData.playerCount;
+    const escapeBonusShare = gameData.escapeBonusPool / gameData.playerCount;
+    const totalShare = share + escapeBonusShare;
+    
+    // Display total share with escape bonus in parentheses
+    yourTotalShareEl.textContent = formatMoney(totalShare);
+    escapeBonusLabelEl.textContent = `(${formatMoney(escapeBonusShare)} Escape Bonus)`;
+    
+    // Display number of thieves remaining
+    thievesEscapedEl.textContent = gameData.playerCount;
+    
+    // Display relic reward if won final raffle
+    if (wonRelic) {
+        relicRewardEl.innerHTML = `
+            <div class="relic-won">
+                <h3>🎊 FINAL RELIC RAFFLE WON! 🎊</h3>
+                <div class="won-relic-card">
+                    <div class="relic-icon" style="background: ${wonRelic.color};">${wonRelic.icon}</div>
+                    <div class="relic-name">${wonRelic.name}</div>
+                    <div class="relic-rarity ${wonRelic.rarity.toLowerCase()}">${wonRelic.rarity}</div>
+                </div>
+                <p class="relic-message">💰 Prize pool depleted! You won the final raffle for remaining relics!</p>
+            </div>
+        `;
+    } else if (gameData.relics.length > 0) {
+        relicRewardEl.innerHTML = `
+            <div class="relic-not-won">
+                <p class="relic-message">💰 Prize pool depleted! Unfortunately, you didn't win the final relic raffle.</p>
+            </div>
+        `;
+    } else {
+        relicRewardEl.innerHTML = `
+            <div class="relic-not-won">
+                <p class="relic-message">💰 Prize pool depleted! All relics were claimed before depletion.</p>
+            </div>
+        `;
+    }
+}
+
 // Show success state
 function showSuccessState(escapeBonus, wonRelic, totalEscapees, raffleHeld) {
     hideAllStates();
@@ -221,7 +269,18 @@ function updateGameDisplay() {
     const playerShareLoot = gameData.accumulatedLoot / gameData.playerCount;
     
     yourShareLootEl.textContent = formatMoney(playerShareLoot);
-    escapeBonusTotalEl.textContent = formatMoney(gameData.escapeBonusPool);
+    
+    // Show escape bonus pool - current claimable + pending for next round
+    if (gameData.pendingEscapeBonus > 0 && gameData.escapeBonusPool > 0) {
+        escapeBonusTotalEl.innerHTML = `${formatMoney(gameData.escapeBonusPool)} <span style="color: #00ff41; font-size: 0.75rem;">claimable</span><br><span style="color: #ffed4e; font-size: 0.75rem;">+${formatMoney(gameData.pendingEscapeBonus)} next round</span>`;
+    } else if (gameData.pendingEscapeBonus > 0) {
+        escapeBonusTotalEl.innerHTML = `$0<br><span style="color: #ffed4e; font-size: 0.75rem;">+${formatMoney(gameData.pendingEscapeBonus)} next round</span>`;
+    } else if (gameData.escapeBonusPool > 0) {
+        escapeBonusTotalEl.innerHTML = `${formatMoney(gameData.escapeBonusPool)} <span style="color: #00ff41; font-size: 0.75rem;">claimable</span>`;
+    } else {
+        escapeBonusTotalEl.textContent = '$0';
+    }
+    
     remainingPrizePoolEl.textContent = formatMoney(gameData.remainingPrizePool);
     playerCountEl.textContent = gameData.playerCount;
     movesCountEl.textContent = gameData.movesCount;
@@ -238,19 +297,41 @@ function updateGameDisplay() {
         `).join('');
     }
     
-    // Update relics display
-    if (gameData.relics.length === 0) {
+    // Update relics display - show all discovered relics
+    if (gameData.discoveredRelics.length === 0) {
         relicsContainerEl.innerHTML = '<div class="empty-state">No relics discovered yet...</div>';
     } else {
-        relicsContainerEl.innerHTML = gameData.relics.map(relic => `
-            <div class="relic-card">
-                <div class="relic-icon" style="background: ${relic.color};">${relic.icon}</div>
-                <div class="relic-info">
-                    <div class="relic-name">${relic.name}</div>
-                    <div class="relic-rarity ${relic.rarity.toLowerCase()}">${relic.rarity}</div>
+        relicsContainerEl.innerHTML = gameData.discoveredRelics.map((relic, index) => {
+            // Check if this is the newly discovered relic (not yet available)
+            const isNewlyDiscovered = gameData.newlyDiscoveredRelic && relic.name === gameData.newlyDiscoveredRelic.name;
+            
+            // Check if this relic is available for raffle
+            const isAvailable = gameData.relics.some(r => r.name === relic.name);
+            
+            // Determine status
+            let statusText, statusClass;
+            if (isNewlyDiscovered) {
+                statusText = '🆕 Next Turn';
+                statusClass = 'relic-new';
+            } else if (isAvailable) {
+                statusText = '✨ Available';
+                statusClass = '';
+            } else {
+                statusText = '🎁 Claimed';
+                statusClass = 'relic-claimed';
+            }
+            
+            return `
+                <div class="relic-card ${statusClass}">
+                    <div class="relic-icon" style="background: ${relic.color};">${relic.icon}</div>
+                    <div class="relic-info">
+                        <div class="relic-name">${relic.name}</div>
+                        <div class="relic-rarity ${relic.rarity.toLowerCase()}">${relic.rarity}</div>
+                        <div class="relic-status">${statusText}</div>
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     }
 }
 
@@ -281,33 +362,98 @@ function simulatePlayerEscapes() {
         return; // No one escapes if there's nothing to gain
     }
     
-    // Calculate escape probability based on bonus pool and relics
-    // Base escape rate: 5% per round
-    let escapeRate = 0.05;
+    // Calculate player's share of loot
+    const playerShare = gameData.accumulatedLoot / gameData.playerCount;
     
-    // Increase escape rate based on escape bonus pool (up to +10%)
-    const bonusIncentive = Math.min((gameData.escapeBonusPool / PRIZE_POOL) * 20, 0.10);
-    escapeRate += bonusIncentive;
+    // Base escape rate depends on loot amount
+    let escapeRate;
+    const hasBreakEven = playerShare >= 10000;
     
-    // Increase escape rate if there are relics (2% per relic, up to +10%)
-    const relicIncentive = Math.min(gameData.relics.length * 0.02, 0.10);
-    escapeRate += relicIncentive;
+    if (!hasBreakEven) {
+        // Players with < $10k are VERY reluctant to escape
+        // They only escape if there's extreme danger (multiple traps)
+        const trapCount = gameData.trapCards.length;
+        
+        if (trapCount === 0) {
+            escapeRate = 0.001; // 0.1% - almost no one leaves without danger
+        } else if (trapCount === 1) {
+            escapeRate = 0.005; // 0.5% - minimal escape with 1 trap
+        } else if (trapCount === 2) {
+            escapeRate = 0.02; // 2% - getting nervous
+        } else {
+            // 3+ traps - real danger, escape despite low loot
+            escapeRate = 0.05 + (trapCount - 2) * 0.03; // 5% base + 3% per additional trap
+        }
+        
+        // With low loot, bonus and relic incentives are minimal (only if significant)
+        if (gameData.escapeBonusPool > PRIZE_POOL * 0.1) { // Only if bonus > 10% of pool
+            escapeRate += 0.01; // Add 1% if significant bonus exists
+        }
+        
+    } else {
+        // Normal behavior for players with $10k+
+        escapeRate = 0.05; // 5% base rate
+        
+        // Increase escape rate based on trap count (risk assessment)
+        const trapRiskIncentive = gameData.trapCards.length * 0.03; // 3% per trap
+        escapeRate += trapRiskIncentive;
+        
+        // Increase escape rate based on escape bonus pool (up to +10%)
+        const bonusIncentive = Math.min((gameData.escapeBonusPool / PRIZE_POOL) * 20, 0.10);
+        escapeRate += bonusIncentive;
+        
+        // Increase escape rate if there are relics (2% per relic, up to +10%)
+        const relicIncentive = Math.min(gameData.relics.length * 0.02, 0.10);
+        escapeRate += relicIncentive;
+    }
     
-    // Calculate number of players escaping (at least 1 if conditions are met)
-    const escapingPlayers = Math.max(1, Math.floor(gameData.playerCount * escapeRate));
+    // Calculate number of players escaping
+    // Only force at least 1 player if escape rate is reasonable (>= 0.5%)
+    const calculatedEscapes = Math.floor(gameData.playerCount * escapeRate);
+    const escapingPlayers = (escapeRate >= 0.005 && calculatedEscapes === 0) ? 1 : calculatedEscapes;
+    
+    // If no one is escaping, just return
+    if (escapingPlayers === 0) {
+        return;
+    }
     
     // Calculate what percentage of remaining players are escaping
     const escapePercentage = escapingPlayers / gameData.playerCount;
+    
+    // Maintain per-player share: remove escaping players' loot from accumulated loot
+    const perPlayerLoot = gameData.accumulatedLoot / gameData.playerCount;
+    const escapingPlayersLoot = perPlayerLoot * escapingPlayers;
+    gameData.accumulatedLoot -= escapingPlayersLoot;
+    
+    // Split escape bonus pool among escapees - remainder stays, then reset pool to 0 + remainder
+    let escapeBonusPerPlayer = 0;
+    let remainder = 0;
+    
+    if (gameData.escapeBonusPool > 0) {
+        escapeBonusPerPlayer = Math.floor(gameData.escapeBonusPool / escapingPlayers);
+        const totalBonusPaid = escapeBonusPerPlayer * escapingPlayers;
+        remainder = gameData.escapeBonusPool - totalBonusPaid;
+        gameData.escapeBonusPool = remainder; // Reset to 0 + remainder
+    }
     
     // Remove escaped players from player count
     const originalCount = gameData.playerCount;
     gameData.playerCount = Math.max(1, gameData.playerCount - escapingPlayers);
     
     const escapePercentDisplay = (escapePercentage * 100).toFixed(1);
-    addLogEntry(`🏃 ${escapingPlayers} player(s) escaped with loot (${escapePercentDisplay}%)! ${gameData.playerCount} players remain.`, 'info');
     
-    // Check if there are relics and handle raffle
-    if (gameData.relics.length > 0) {
+    if (escapeBonusPerPlayer > 0) {
+        addLogEntry(`🏃 ${escapingPlayers} player(s) escaped with loot (${escapePercentDisplay}%)! Each got ${formatMoney(perPlayerLoot)} + ${formatMoney(escapeBonusPerPlayer)} bonus. ${gameData.playerCount} players remain.`, 'info');
+    } else {
+        addLogEntry(`🏃 ${escapingPlayers} player(s) escaped with loot (${escapePercentDisplay}%)! Each got ${formatMoney(perPlayerLoot)}. ${gameData.playerCount} players remain.`, 'info');
+    }
+    
+    // Update display after escape to show new pool state
+    updateGameDisplay();
+    
+    // Check if there are relics available for raffle
+    // Safety check: Must have relics AND escaping players
+    if (gameData.relics.length > 0 && escapingPlayers > 0) {
         // Calculate threshold: 6.5% per relic
         const raffleThreshold = gameData.relics.length * 0.065;
         const thresholdPercent = (raffleThreshold * 100).toFixed(1);
@@ -315,9 +461,20 @@ function simulatePlayerEscapes() {
         
         if (escapePercentage < raffleThreshold) {
             // Below threshold - hold raffle
-            const winnerIndex = Math.floor(Math.random() * escapingPlayers) + 1;
-            const wonRelic = gameData.relics[Math.floor(Math.random() * gameData.relics.length)];
-            addLogEntry(`✨ RELIC RAFFLE! Player #${winnerIndex} won ${wonRelic.name} ${wonRelic.icon} among ${escapingPlayers} escapees.`, 'relic');
+            // Double-check relics still exist before raffle
+            if (gameData.relics.length > 0) {
+                const winnerIndex = Math.floor(Math.random() * escapingPlayers) + 1;
+                const relicIndex = Math.floor(Math.random() * gameData.relics.length);
+                const wonRelic = gameData.relics[relicIndex];
+                
+                // Verify we got a valid relic
+                if (wonRelic) {
+                    // Remove the won relic from the pool
+                    gameData.relics.splice(relicIndex, 1);
+                    
+                    addLogEntry(`✨ RELIC RAFFLE! Player #${winnerIndex} won ${wonRelic.name} ${wonRelic.icon} among ${escapingPlayers} escapees. (${gameData.relics.length} relics remain)`, 'relic');
+                }
+            }
         } else {
             // At or above threshold - no raffle
             addLogEntry(`⚠️ Too many escapees (${actualEscapePercent}% ≥ ${thresholdPercent}% threshold for ${gameData.relics.length} relic(s)). No raffle held.`, 'warning');
@@ -331,18 +488,57 @@ function makeMove() {
     
     gameData.movesCount++;
     
-    // 60% chance of loot, 25% chance of trap, 15% chance of relic
+    // Activate pending escape bonus from previous round (make it claimable)
+    if (gameData.pendingEscapeBonus > 0) {
+        gameData.escapeBonusPool += gameData.pendingEscapeBonus; // Add to existing pool (accumulates if unclaimed)
+        addLogEntry(`💰 ${formatMoney(gameData.pendingEscapeBonus)} escape bonus is now available for claiming! Total pool: ${formatMoney(gameData.escapeBonusPool)}`, 'success');
+        gameData.pendingEscapeBonus = 0;
+        updateGameDisplay(); // Update display immediately
+    }
+    
+    // Activate newly discovered relic from previous round (make it available for raffle)
+    if (gameData.newlyDiscoveredRelic) {
+        gameData.relics.push(gameData.newlyDiscoveredRelic);
+        addLogEntry(`🎁 ${gameData.newlyDiscoveredRelic.name} ${gameData.newlyDiscoveredRelic.icon} is now available for raffle!`, 'relic');
+        gameData.newlyDiscoveredRelic = null;
+        updateGameDisplay(); // Update display to show relic as available
+    }
+    
+    // Check if all 3 relics have been discovered
+    const allRelicsDrawn = gameData.discoveredRelics.length >= MAX_RELICS;
+    
+    // Adjust odds based on relic availability
+    // Before all relics: 57.5% loot, 30% trap, 12.5% relic
+    // After all relics: 70% loot, 30% trap
     const random = Math.random();
     
-    if (random < 0.60) {
-        // Loot outcome
-        drawLoot();
-    } else if (random < 0.85) {
-        // Trap outcome
-        drawTrap();
+    if (allRelicsDrawn) {
+        // All relics drawn - only loot and traps
+        if (random < 0.70) {
+            // Loot outcome
+            drawLoot();
+        } else {
+            // Trap outcome
+            drawTrap();
+        }
     } else {
-        // Relic outcome
-        drawRelic();
+        // Still relics available
+        if (random < 0.575) {
+            // Loot outcome
+            drawLoot();
+        } else if (random < 0.875) {
+            // Trap outcome
+            drawTrap();
+        } else {
+            // Relic outcome
+            drawRelic();
+        }
+    }
+    
+    // Check if prize pool is depleted
+    if (gameData.remainingPrizePool <= 0) {
+        triggerPrizePoolDepletion();
+        return;
     }
     
     // Simulate other players escaping after each round
@@ -372,29 +568,51 @@ function drawLoot() {
     }
     
     const percentage = Math.random() * (maxPercent - minPercent) + minPercent;
-    const totalLoot = Math.floor(PRIZE_POOL * percentage);
+    const totalLoot = Math.floor(gameData.remainingPrizePool * percentage); // Use REMAINING prize pool
     
-    // 5% goes to escape bonus pool
+    // 5% goes to pending escape bonus (available next round)
     const escapeBonus = Math.floor(totalLoot * ESCAPE_BONUS_PERCENTAGE);
     const lootAmount = totalLoot - escapeBonus;
     
     // Loot is split equally among REMAINING players only
     // Store total accumulated loot (not per player)
     gameData.accumulatedLoot += lootAmount;
-    gameData.escapeBonusPool += escapeBonus;
+    gameData.pendingEscapeBonus = escapeBonus; // Set as pending (not yet claimable)
     gameData.remainingPrizePool -= totalLoot; // Deduct from remaining prize pool
     
     const perPlayerAmount = Math.floor(lootAmount / gameData.playerCount);
     const percentageStr = (percentage * 100).toFixed(1);
-    addLogEntry(`💰 LOOT SECURED! Drew ${percentageStr}% of prize pool (${formatMoney(perPlayerAmount)} per player + ${formatMoney(escapeBonus)} to escape bonus)`, 'success');
+    const remainingPercent = ((gameData.remainingPrizePool / PRIZE_POOL) * 100).toFixed(1);
+    addLogEntry(`💰 LOOT SECURED! Drew ${percentageStr}% of remaining prize pool (${formatMoney(perPlayerAmount)} per player + ${formatMoney(escapeBonus)} Escape Bonus). ${remainingPercent}% of total pool remains.`, 'success');
+    
+    // Update display immediately to show pending bonus
+    updateGameDisplay();
 }
 
 // Draw relic
 function drawRelic() {
-    const randomRelic = RELIC_TYPES[Math.floor(Math.random() * RELIC_TYPES.length)];
-    gameData.relics.push(randomRelic);
+    // Check if max relics already drawn
+    if (gameData.discoveredRelics.length >= MAX_RELICS) {
+        // Shouldn't happen, but fallback to loot
+        drawLoot();
+        return;
+    }
     
-    addLogEntry(`✨ RELIC DISCOVERED! Found ${randomRelic.name} ${randomRelic.icon} (${randomRelic.rarity})`, 'relic');
+    const randomRelic = RELIC_TYPES[Math.floor(Math.random() * RELIC_TYPES.length)];
+    
+    // Store as newly discovered (available for raffle next turn)
+    gameData.newlyDiscoveredRelic = randomRelic;
+    gameData.discoveredRelics.push(randomRelic); // Add to discovered relics for display
+    
+    addLogEntry(`✨ RELIC DISCOVERED! Found ${randomRelic.name} ${randomRelic.icon} (${randomRelic.rarity}) - ${gameData.discoveredRelics.length}/${MAX_RELICS} relics found. Available next turn!`, 'relic');
+    
+    // Notify when all relics are found
+    if (gameData.discoveredRelics.length >= MAX_RELICS) {
+        addLogEntry(`🎊 ALL ${MAX_RELICS} RELICS FOUND! No more relics available - odds now 70% loot, 30% trap!`, 'relic');
+    }
+    
+    // Update display immediately to show the new relic as pending
+    updateGameDisplay();
 }
 
 // Draw trap
@@ -431,6 +649,46 @@ function triggerAlarm(duplicateTrap) {
     }, 1500);
 }
 
+// Prize pool depletion (game ends, raffle remaining relics)
+function triggerPrizePoolDepletion() {
+    gameData.gameActive = false;
+    addLogEntry(`💰 PRIZE POOL DEPLETED! All money has been taken from the vault!`, 'warning');
+    
+    // Check if there are unclaimed relics
+    const unclaimedRelics = gameData.relics.length;
+    if (unclaimedRelics > 0 && gameData.playerCount > 0) {
+        addLogEntry(`✨ ${unclaimedRelics} relic(s) remain! All ${gameData.playerCount} remaining thieves will raffle for them!`, 'relic');
+        
+        // Player has a chance to win one of the remaining relics
+        const winChance = 1 / gameData.playerCount;
+        let wonRelic = null;
+        if (Math.random() < winChance) {
+            // Verify relics still exist before accessing
+            if (gameData.relics.length > 0) {
+                const relicIndex = Math.floor(Math.random() * gameData.relics.length);
+                wonRelic = gameData.relics[relicIndex];
+                
+                // Verify we got a valid relic
+                if (wonRelic) {
+                    // Remove the won relic from the pool
+                    gameData.relics.splice(relicIndex, 1);
+                    
+                    addLogEntry(`🎉 YOU WON THE FINAL RAFFLE! Claimed ${wonRelic.name} ${wonRelic.icon}`, 'relic');
+                }
+            }
+        }
+        
+        setTimeout(() => {
+            showPrizePoolDepletionState(wonRelic);
+        }, 1500);
+    } else {
+        addLogEntry(`🏃 No relics remain. Time to escape!`, 'info');
+        setTimeout(() => {
+            showPrizePoolDepletionState(null);
+        }, 1500);
+    }
+}
+
 // Escape with loot
 function escapeWithLoot() {
     if (!gameData.gameActive) return;
@@ -450,24 +708,59 @@ function escapeWithLoot() {
     // Calculate what percentage of remaining players are escaping
     const escapePercentage = totalEscapees / gameData.playerCount;
     
-    // Calculate escape bonus per escapee
-    const escapeBonusShare = gameData.escapeBonusPool / totalEscapees;
+    // Calculate per-player loot share BEFORE reducing player count
+    const playerLootShare = gameData.accumulatedLoot / gameData.playerCount;
+    
+    // Maintain per-player share: remove escaping players' loot from accumulated loot
+    const escapingPlayersLoot = playerLootShare * totalEscapees;
+    gameData.accumulatedLoot -= escapingPlayersLoot;
+    
+    // Split escape bonus pool among escapees - remainder stays, then reset pool to 0 + remainder
+    let escapeBonusShare = 0;
+    let totalEscapeBonus = 0;
+    
+    if (gameData.escapeBonusPool > 0) {
+        escapeBonusShare = Math.floor(gameData.escapeBonusPool / totalEscapees);
+        totalEscapeBonus = escapeBonusShare * totalEscapees;
+        const remainder = gameData.escapeBonusPool - totalEscapeBonus;
+        gameData.escapeBonusPool = remainder; // Reset to 0 + remainder
+    }
+    
+    // Update player count
+    gameData.playerCount = Math.max(1, gameData.playerCount - totalEscapees);
     
     // Determine if player wins a relic
     // Dynamic threshold: 6.5% per relic (1 relic = 6.5%, 2 relics = 13%, 3 relics = 19.5%, etc.)
     // (Prevents mass exodus from claiming all relics)
     let wonRelic = null;
-    if (gameData.relics.length > 0) {
+    let raffleWasHeld = false;
+    
+    // Store the count BEFORE any raffle, for display purposes
+    const relicsBeforeRaffle = gameData.relics.length;
+    
+    if (gameData.relics.length > 0 && totalEscapees > 0) {
         const raffleThreshold = gameData.relics.length * 0.065;
         const thresholdPercent = (raffleThreshold * 100).toFixed(1);
         const actualEscapePercent = (escapePercentage * 100).toFixed(1);
         
         if (escapePercentage < raffleThreshold) {
+            raffleWasHeld = true;
             // Below threshold - hold exclusive raffle
             const winChance = 1 / totalEscapees;
             if (Math.random() < winChance) {
-                wonRelic = gameData.relics[Math.floor(Math.random() * gameData.relics.length)];
-                addLogEntry(`🎉 WON RELIC RAFFLE! Claimed ${wonRelic.name} ${wonRelic.icon} (${totalEscapees} escapees participated)`, 'relic');
+                // Double-check relics still exist
+                if (gameData.relics.length > 0) {
+                    const relicIndex = Math.floor(Math.random() * gameData.relics.length);
+                    wonRelic = gameData.relics[relicIndex];
+                    
+                    // Verify we got a valid relic
+                    if (wonRelic) {
+                        // Remove the won relic from the pool
+                        gameData.relics.splice(relicIndex, 1);
+                        
+                        addLogEntry(`🎉 WON RELIC RAFFLE! Claimed ${wonRelic.name} ${wonRelic.icon} (${totalEscapees} escapees participated, ${gameData.relics.length} relics remain)`, 'relic');
+                    }
+                }
             } else {
                 addLogEntry(`😔 Lost the relic raffle among ${totalEscapees} escapees... Better luck next time!`, 'info');
             }
@@ -477,12 +770,10 @@ function escapeWithLoot() {
         }
     }
     
-    const playerLootShare = gameData.accumulatedLoot / gameData.playerCount;
     addLogEntry(`🏃 ESCAPING WITH LOOT! ${totalEscapees} players escaped this round. Your share: ${formatMoney(playerLootShare)} + Escape Bonus: ${formatMoney(escapeBonusShare)}`, 'success');
     
-    const raffleThresholdForSuccess = gameData.relics.length * 0.065;
     setTimeout(() => {
-        showSuccessState(gameData.escapeBonusPool, wonRelic, totalEscapees, escapePercentage < raffleThresholdForSuccess);
+        showSuccessState(totalEscapeBonus, wonRelic, totalEscapees, raffleWasHeld);
     }, 1000);
 }
 
@@ -491,12 +782,15 @@ function resetGame() {
     gameData = {
         accumulatedLoot: 0,
         escapeBonusPool: 0,
+        pendingEscapeBonus: 0,
         remainingPrizePool: PRIZE_POOL,
         playerCount: INITIAL_PLAYER_COUNT,
         movesCount: 0,
         lootDrawCount: 0,
         trapCards: [],
         relics: [],
+        discoveredRelics: [],
+        newlyDiscoveredRelic: null,
         gameActive: false
     };
     
