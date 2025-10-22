@@ -64,9 +64,11 @@ let gameData = {
     pendingEscapeBonus: 0, // Just drawn, available NEXT round
     remainingPrizePool: PRIZE_POOL, // Track remaining prize pool
     playerCount: INITIAL_PLAYER_COUNT, // Start with 500 players
+    eliminatedPlayers: 0, // Track eliminated players (caught by traps)
     movesCount: 0,
     lootDrawCount: 0, // Track how many times loot has been drawn
     trapCards: [],
+    uniqueTrapTypes: new Set(), // Track unique trap types for elimination rate
     relics: [], // Available relics (for raffle)
     discoveredRelics: [], // All discovered relics (for display)
     newlyDiscoveredRelic: null, // Relic discovered this turn (not yet available for raffle)
@@ -143,14 +145,24 @@ function showGameOverState(duplicateTrap) {
     lootLostEl.textContent = formatMoney(gameData.playerLootShare);
     movesSurvivedEl.textContent = gameData.movesCount;
     
-    // Show the duplicate trap that triggered the alarm
-    duplicateTrapsEl.innerHTML = `
-        <div class="alarm-trap-card">
-            <div class="trap-icon" style="background: ${duplicateTrap.color};">${duplicateTrap.icon}</div>
-            <div class="trap-name">${duplicateTrap.name}</div>
-            <div class="alarm-text">DUPLICATE DETECTED!</div>
-        </div>
-    `;
+    // Show the trap information or elimination message
+    if (duplicateTrap) {
+        duplicateTrapsEl.innerHTML = `
+            <div class="alarm-trap-card">
+                <div class="trap-icon" style="background: ${duplicateTrap.color};">${duplicateTrap.icon}</div>
+                <div class="trap-name">${duplicateTrap.name}</div>
+                <div class="alarm-text">DUPLICATE DETECTED!</div>
+            </div>
+        `;
+    } else {
+        duplicateTrapsEl.innerHTML = `
+            <div class="alarm-trap-card">
+                <div class="trap-icon" style="background: #ff0000;">💀</div>
+                <div class="trap-name">All Players Eliminated</div>
+                <div class="alarm-text">${gameData.eliminatedPlayers} PLAYERS CAUGHT BY TRAPS!</div>
+            </div>
+        `;
+    }
 }
 
 // Show prize pool depletion state
@@ -540,6 +552,25 @@ function makeMove() {
         continueBtnText.textContent = 'HUNT FOR LOOT';
     }
     
+    // ELIMINATION MECHANIC: Eliminate players based on unique trap types
+    if (gameData.uniqueTrapTypes.size > 0) {
+        const eliminationRate = gameData.uniqueTrapTypes.size * 0.10; // 10% per trap type
+        const playersToEliminate = Math.floor(gameData.playerCount * eliminationRate);
+        
+        if (playersToEliminate > 0) {
+            gameData.playerCount = Math.max(0, gameData.playerCount - playersToEliminate);
+            gameData.eliminatedPlayers += playersToEliminate;
+            
+            const eliminationPercent = (eliminationRate * 100).toFixed(0);
+            addLogEntry(`⚠️ TRAP ELIMINATION! ${playersToEliminate} players caught (${eliminationPercent}% elimination rate with ${gameData.uniqueTrapTypes.size} trap type(s)). ${gameData.playerCount} players remain.`, 'danger', 'player');
+            
+            // Check if all players eliminated
+            if (checkAllPlayersEliminated()) {
+                return;
+            }
+        }
+    }
+    
     // Save current loot values as last round's values (before new draw)
     // This is what players get if they escape this round
     gameData.lastRoundLoot = gameData.accumulatedLoot;
@@ -700,33 +731,32 @@ function drawTrap() {
     const randomTrap = TRAP_TYPES[Math.floor(Math.random() * TRAP_TYPES.length)];
     gameData.trapCards.push(randomTrap);
     
-    addLogEntry(`🚨 TRAP ENCOUNTERED! ${randomTrap.name} ${randomTrap.icon} discovered in the vault!`, 'warning', 'game');
+    // Check if this is a new trap type
+    const wasNew = !gameData.uniqueTrapTypes.has(randomTrap.name);
+    gameData.uniqueTrapTypes.add(randomTrap.name);
     
-    // Check for duplicates
-    const trapCounts = {};
-    gameData.trapCards.forEach(trap => {
-        trapCounts[trap.name] = (trapCounts[trap.name] || 0) + 1;
-    });
-    
-    // Check if any trap has 2 or more occurrences
-    for (let trapName in trapCounts) {
-        if (trapCounts[trapName] >= 2) {
-            // Trigger alarm
-            const duplicateTrap = TRAP_TYPES.find(t => t.name === trapName);
-            triggerAlarm(duplicateTrap);
-            return;
-        }
+    if (wasNew) {
+        // New trap type discovered - increase elimination rate
+        const eliminationRate = gameData.uniqueTrapTypes.size * 10;
+        addLogEntry(`🚨 NEW TRAP TYPE! ${randomTrap.name} ${randomTrap.icon} discovered! Elimination rate now ${eliminationRate}% per round (${gameData.uniqueTrapTypes.size} trap type(s) active).`, 'danger', 'game');
+    } else {
+        // Duplicate trap, but game continues
+        addLogEntry(`🚨 TRAP ENCOUNTERED! ${randomTrap.name} ${randomTrap.icon} discovered in the vault again!`, 'warning', 'game');
     }
 }
 
-// Trigger alarm (game over)
-function triggerAlarm(duplicateTrap) {
-    gameData.gameActive = false;
-    addLogEntry(`🚨 ALARM TRIGGERED! Two ${duplicateTrap.name} detected! YOU'VE BEEN CAPTURED!`, 'danger', 'game');
-    
-    setTimeout(() => {
-        showGameOverState(duplicateTrap);
-    }, 1500);
+// Check if all players eliminated (new end condition)
+function checkAllPlayersEliminated() {
+    if (gameData.playerCount <= 0) {
+        gameData.gameActive = false;
+        addLogEntry(`💀 ALL PLAYERS ELIMINATED! Everyone was caught by the traps!`, 'danger', 'game');
+        
+        setTimeout(() => {
+            showGameOverState(null);
+        }, 1500);
+        return true;
+    }
+    return false;
 }
 
 // Prize pool depletion (game ends, raffle remaining relics)
@@ -914,9 +944,11 @@ function resetGame() {
         pendingEscapeBonus: 0,
         remainingPrizePool: PRIZE_POOL,
         playerCount: INITIAL_PLAYER_COUNT,
+        eliminatedPlayers: 0,
         movesCount: 0,
         lootDrawCount: 0,
         trapCards: [],
+        uniqueTrapTypes: new Set(),
         relics: [],
         discoveredRelics: [],
         newlyDiscoveredRelic: null,
