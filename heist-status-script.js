@@ -609,18 +609,30 @@ function drawLoot() {
     
     // Determine percentage range based on loot draw count
     let minPercent, maxPercent;
-    if (gameData.lootDrawCount <= 5) {
-        // First 5 times: 1%-10%
+    if (gameData.lootDrawCount <= 3) {
+        // Draws 1-3: 1%-10%
         minPercent = 0.01;
         maxPercent = 0.10;
-    } else if (gameData.lootDrawCount <= 10) {
-        // Next 5 times (6-10): 5%-15%
+    } else if (gameData.lootDrawCount <= 6) {
+        // Draws 4-6: 5%-15%
         minPercent = 0.05;
         maxPercent = 0.15;
-    } else {
-        // All subsequent times (11+): 10%-20%
+    } else if (gameData.lootDrawCount <= 9) {
+        // Draws 7-9: 10%-20%
         minPercent = 0.10;
         maxPercent = 0.20;
+    } else if (gameData.lootDrawCount <= 12) {
+        // Draws 10-12: 15%-25%
+        minPercent = 0.15;
+        maxPercent = 0.25;
+    } else if (gameData.lootDrawCount <= 16) {
+        // Draws 13-16: 20%-30%
+        minPercent = 0.20;
+        maxPercent = 0.30;
+    } else {
+        // Draws 17+: 25%-35%
+        minPercent = 0.25;
+        maxPercent = 0.35;
     }
     
     const percentage = Math.random() * (maxPercent - minPercent) + minPercent;
