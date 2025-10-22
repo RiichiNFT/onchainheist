@@ -377,6 +377,9 @@ function simulatePlayerEscapes() {
     // Calculate player's share of loot
     const playerShare = gameData.accumulatedLoot / gameData.playerCount;
     
+    // Calculate total escape bonus (what players see in UI)
+    const totalEscapeBonusVisible = gameData.escapeBonusPool + gameData.pendingEscapeBonus;
+    
     // Base escape rate depends on loot amount
     let escapeRate;
     const hasBreakEven = playerShare >= 10000;
@@ -398,9 +401,9 @@ function simulatePlayerEscapes() {
         }
         
         // With low loot, bonus and relic incentives are minimal (only if significant)
-        if (gameData.escapeBonusPool > 100000) { // Big bonus pool incentive ($100k+)
+        if (totalEscapeBonusVisible > 100000) { // Big bonus pool incentive ($100k+)
             escapeRate += 0.03; // Add 3% if big bonus pool exists
-        } else if (gameData.escapeBonusPool > PRIZE_POOL * 0.1) { // Only if bonus > 10% of pool
+        } else if (totalEscapeBonusVisible > PRIZE_POOL * 0.1) { // Only if bonus > 10% of pool
             escapeRate += 0.01; // Add 1% if significant bonus exists
         }
         
@@ -413,11 +416,11 @@ function simulatePlayerEscapes() {
         escapeRate += trapRiskIncentive;
         
         // MAJOR INCENTIVE: Big escape bonus pool ($100k+)
-        if (gameData.escapeBonusPool > 100000) {
+        if (totalEscapeBonusVisible > 100000) {
             escapeRate += 0.15; // Add 15% if bonus pool exceeds $100k!
         } else {
             // Normal escape bonus incentive (up to +10%)
-            const bonusIncentive = Math.min((gameData.escapeBonusPool / PRIZE_POOL) * 20, 0.10);
+            const bonusIncentive = Math.min((totalEscapeBonusVisible / PRIZE_POOL) * 20, 0.10);
             escapeRate += bonusIncentive;
         }
         
@@ -454,15 +457,20 @@ function simulatePlayerEscapes() {
     // Remaining players will share what's left (including all current round loot)
     gameData.accumulatedLoot -= escapingPlayersLoot;
     
-    // Split escape bonus pool among escapees - remainder stays, then reset pool to 0 + remainder
+    // Split TOTAL escape bonus (claimable + pending) among escapees
+    // This matches what's displayed in the UI
     let escapeBonusPerPlayer = 0;
-    let remainder = 0;
     
-    if (gameData.escapeBonusPool > 0) {
-        escapeBonusPerPlayer = Math.floor(gameData.escapeBonusPool / escapingPlayers);
+    const totalEscapeBonusAvailable = gameData.escapeBonusPool + gameData.pendingEscapeBonus;
+    
+    if (totalEscapeBonusAvailable > 0) {
+        escapeBonusPerPlayer = Math.floor(totalEscapeBonusAvailable / escapingPlayers);
         const totalBonusPaid = escapeBonusPerPlayer * escapingPlayers;
-        remainder = gameData.escapeBonusPool - totalBonusPaid;
-        gameData.escapeBonusPool = remainder; // Reset to 0 + remainder
+        const remainder = totalEscapeBonusAvailable - totalBonusPaid;
+        
+        // Reset both pools - remainder goes back to escapeBonusPool
+        gameData.escapeBonusPool = remainder;
+        gameData.pendingEscapeBonus = 0;
     }
     
     // Remove escaped players from player count
@@ -823,12 +831,15 @@ function escapeWithLoot() {
     // Calculate how many total players are escaping this round
     const baseEscapeRate = 0.08; // 8% base rate when player escapes
     
+    // Calculate total escape bonus (what players see in UI)
+    const totalEscapeBonusVisible = gameData.escapeBonusPool + gameData.pendingEscapeBonus;
+    
     // MAJOR INCENTIVE: Big escape bonus pool ($100k+)
     let bonusIncentive;
-    if (gameData.escapeBonusPool > 100000) {
+    if (totalEscapeBonusVisible > 100000) {
         bonusIncentive = 0.20; // 20% bonus if pool exceeds $100k!
     } else {
-        bonusIncentive = Math.min((gameData.escapeBonusPool / PRIZE_POOL) * 15, 0.12);
+        bonusIncentive = Math.min((totalEscapeBonusVisible / PRIZE_POOL) * 15, 0.12);
     }
     
     const relicIncentive = Math.min(gameData.relics.length * 0.04, 0.15);
@@ -852,15 +863,21 @@ function escapeWithLoot() {
     const escapingPlayersLoot = playerLootShare * totalEscapees;
     gameData.accumulatedLoot -= escapingPlayersLoot;
     
-    // Split escape bonus pool among escapees - remainder stays, then reset pool to 0 + remainder
+    // Split TOTAL escape bonus (claimable + pending) among escapees
+    // This matches what's displayed in the UI
     let escapeBonusShare = 0;
     let totalEscapeBonus = 0;
     
-    if (gameData.escapeBonusPool > 0) {
-        escapeBonusShare = Math.floor(gameData.escapeBonusPool / totalEscapees);
+    const totalEscapeBonusAvailable = gameData.escapeBonusPool + gameData.pendingEscapeBonus;
+    
+    if (totalEscapeBonusAvailable > 0) {
+        escapeBonusShare = Math.floor(totalEscapeBonusAvailable / totalEscapees);
         totalEscapeBonus = escapeBonusShare * totalEscapees;
-        const remainder = gameData.escapeBonusPool - totalEscapeBonus;
-        gameData.escapeBonusPool = remainder; // Reset to 0 + remainder
+        const remainder = totalEscapeBonusAvailable - totalEscapeBonus;
+        
+        // Reset both pools - remainder goes back to escapeBonusPool
+        gameData.escapeBonusPool = remainder;
+        gameData.pendingEscapeBonus = 0;
     }
     
     // Update player count
