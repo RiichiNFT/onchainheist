@@ -65,7 +65,7 @@
     <div class="status-container hidden" id="gameState">
         <div class="game-container">
             <div class="game-header">
-                <h1 class="game-title">🏦 HEIST IN PROGRESS</h1>
+                <h1 class="game-title">🏦 THE HEIST</h1>
                 <div class="prize-pools-container">
                     <div class="prize-pool-display">
                         <div class="pool-label">Total Prize Pool</div>
@@ -89,29 +89,29 @@
                 <div class="stat-box">
                     <div class="stat-icon">🎁</div>
                     <div class="stat-info">
-                        <div class="stat-label">Escape Bonus Pool</div>
+                        <div class="stat-label">Escape Bonus</div>
                         <div class="stat-value" id="escapeBonusTotal">$0</div>
                     </div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-icon">👥</div>
                     <div class="stat-info">
-                        <div class="stat-label">Thiefs in Heist</div>
-                        <div class="stat-value" id="playerCount">1</div>
+                        <div class="stat-label">Crew Count</div>
+                        <div class="stat-value stat-yellow" id="playerCount">1</div>
                     </div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-icon">🎲</div>
                     <div class="stat-info">
                         <div class="stat-label">Round</div>
-                        <div class="stat-value" id="movesCount">0</div>
+                        <div class="stat-value stat-yellow" id="movesCount">0</div>
                     </div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-icon">⚠️</div>
                     <div class="stat-info">
                         <div class="stat-label">Players to Eliminate Next Round</div>
-                        <div class="stat-value" id="playersToEliminate">0</div>
+                        <div class="stat-value stat-red" id="playersToEliminate">0</div>
                     </div>
                 </div>
             </div>
@@ -119,26 +119,26 @@
             <div class="trap-cards-section">
                 <h3 class="section-title">🚨 Security Level</h3>
                 <div class="trap-cards-container" id="trapCardsContainer">
-                    <div class="empty-state">No security threats encountered yet...</div>
+                    <div class="empty-state">Security Level 0</div>
                 </div>
             </div>
 
             <div class="relics-section">
-                <h3 class="section-title">✨ Artifacts Found</h3>
+                <h3 class="section-title">🖼️ Artifacts Found</h3>
                 <div class="relics-container" id="relicsContainer">
-                    <div class="empty-state">No artifacts found yet...</div>
+                    <div class="empty-state">No Artifacts found</div>
                 </div>
             </div>
 
             <div class="action-logs-container">
                 <div class="action-log-section game-log">
-                    <h3 class="section-title">🎲 Heist Intel</h3>
+                    <h3 class="section-title">🏦 Heist Intel</h3>
                     <div class="action-log" id="gameLog">
                         <div class="log-entry initial">Waiting for game to start...</div>
                     </div>
                 </div>
                 <div class="action-log-section player-log">
-                    <h3 class="section-title">👥 Player Actions</h3>
+                    <h3 class="section-title">🥷 Player Actions</h3>
                     <div class="action-log" id="playerLog">
                         <div class="log-entry initial">No player actions yet...</div>
                     </div>

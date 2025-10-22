@@ -308,7 +308,7 @@ function updateGameDisplay() {
     
     // Update trap cards display
     if (gameData.trapCards.length === 0) {
-        trapCardsContainerEl.innerHTML = '<div class="empty-state">No traps encountered yet...</div>';
+        trapCardsContainerEl.innerHTML = '<div class="empty-state">Security Level 0</div>';
     } else {
         trapCardsContainerEl.innerHTML = gameData.trapCards.map(trap => `
             <div class="trap-card">
@@ -320,7 +320,7 @@ function updateGameDisplay() {
     
     // Update relics display - show all discovered relics
     if (gameData.discoveredRelics.length === 0) {
-        relicsContainerEl.innerHTML = '<div class="empty-state">No relics discovered yet...</div>';
+        relicsContainerEl.innerHTML = '<div class="empty-state">No Artifacts found</div>';
     } else {
         relicsContainerEl.innerHTML = gameData.discoveredRelics.map((relic, index) => {
             // Check if this is the newly discovered relic (not yet available)

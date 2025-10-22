@@ -447,6 +447,14 @@ body:has(#gameState:not(.hidden)) {
     color: #00ff41;
 }
 
+.stat-value.stat-yellow {
+    color: #ffd700;
+}
+
+.stat-value.stat-red {
+    color: #ff6b6b;
+}
+
 /* Trap Cards Section */
 .trap-cards-section, .relics-section {
     margin-bottom: 2rem;
