@@ -493,7 +493,6 @@ function makeMove() {
     // Activate pending escape bonus from previous round (make it claimable)
     if (gameData.pendingEscapeBonus > 0) {
         gameData.escapeBonusPool += gameData.pendingEscapeBonus; // Add to existing pool (accumulates if unclaimed)
-        addLogEntry(`💰 ${formatMoney(gameData.pendingEscapeBonus)} escape bonus is now available for claiming! Total pool: ${formatMoney(gameData.escapeBonusPool)}`, 'success', 'game');
         gameData.pendingEscapeBonus = 0;
         updateGameDisplay(); // Update display immediately
     }
