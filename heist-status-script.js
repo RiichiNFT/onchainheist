@@ -508,20 +508,16 @@ function simulatePlayerEscapes() {
     // Remaining players will share what's left (including all current round loot)
     gameData.accumulatedLoot -= escapingPlayersLoot;
     
-    // Split TOTAL escape bonus (claimable + pending) among escapees
-    // This matches what's displayed in the UI
+    // Split ONLY claimable escape bonus among escapees (not pending bonus from current round)
+    // Pending bonus stays for next round, just like loot distribution
     let escapeBonusPerPlayer = 0;
     
-    const totalEscapeBonusAvailable = gameData.escapeBonusPool + gameData.pendingEscapeBonus;
-    
-    if (totalEscapeBonusAvailable > 0) {
-        escapeBonusPerPlayer = Math.floor(totalEscapeBonusAvailable / escapingPlayers);
+    if (gameData.escapeBonusPool > 0) {
+        escapeBonusPerPlayer = Math.floor(gameData.escapeBonusPool / escapingPlayers);
         const totalBonusPaid = escapeBonusPerPlayer * escapingPlayers;
-        const remainder = totalEscapeBonusAvailable - totalBonusPaid;
-        
-        // Reset both pools - remainder goes to escapeBonusPool
-        gameData.escapeBonusPool = remainder;
-        gameData.pendingEscapeBonus = 0;
+        const remainder = gameData.escapeBonusPool - totalBonusPaid;
+        gameData.escapeBonusPool = remainder; // Reset to remainder only
+        // pendingEscapeBonus stays untouched for next round
     }
     
     // Remove escaped players from player count
@@ -975,21 +971,17 @@ function escapeWithLoot() {
     const escapingPlayersLoot = playerLootShare * totalEscapees;
     gameData.accumulatedLoot -= escapingPlayersLoot;
     
-    // Split TOTAL escape bonus (claimable + pending) among escapees
-    // This matches what's displayed in the UI
+    // Split ONLY claimable escape bonus among escapees (not pending bonus from current round)
+    // Pending bonus stays for next round, just like loot distribution
     let escapeBonusShare = 0;
     let totalEscapeBonusPaid = 0;
     
-    const totalEscapeBonusAvailable = gameData.escapeBonusPool + gameData.pendingEscapeBonus;
-    
-    if (totalEscapeBonusAvailable > 0) {
-        escapeBonusShare = Math.floor(totalEscapeBonusAvailable / totalEscapees);
+    if (gameData.escapeBonusPool > 0) {
+        escapeBonusShare = Math.floor(gameData.escapeBonusPool / totalEscapees);
         totalEscapeBonusPaid = escapeBonusShare * totalEscapees;
-        const remainder = totalEscapeBonusAvailable - totalEscapeBonusPaid;
-        
-        // Reset both pools - remainder goes to escapeBonusPool
-        gameData.escapeBonusPool = remainder;
-        gameData.pendingEscapeBonus = 0;
+        const remainder = gameData.escapeBonusPool - totalEscapeBonusPaid;
+        gameData.escapeBonusPool = remainder; // Reset to remainder only
+        // pendingEscapeBonus stays untouched for next round
     }
     
     // Update player count
